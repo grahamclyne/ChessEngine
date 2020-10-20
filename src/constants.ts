@@ -1,4 +1,3 @@
-import {BitSet} from './bitset';
 import * as util from './utils'
 
 export const rankMasks: bigint[] = util.setRankMasks();

@@ -1,7 +1,5 @@
-
-
-
-
+import { RANK_8 } from "./constants"
+import * as R from 'ramda'
 export function printBitSet(bitSet) {
     bitSet = BigInt.asUintN(64,BigInt(bitSet))
     var x = bitSet.toString(2).split("").reverse()
@@ -17,12 +15,11 @@ export function printBitSet(bitSet) {
 }
 export function set(bitSet:bigint, index, value) {
     let x:bigint = BigInt(Math.floor(Math.pow(2, (index))))
-    x = (x >> 0n)
     if(value == 1){
         return (x|bitSet)
     }
     else{
-        return (bitSet|(~x))
+        return (bitSet&(~x))
     }
 }
 export function setRange(bitSet:bigint, start, end, value){
@@ -42,9 +39,18 @@ export function get(bitSet, index){
 }
 
 
-export function  lsb(bitSet) {
-    return 0
+export function  lsb(bitSet) { //least set bit, not least significant bit
+    return Math.log2(Number((bitSet) & (-bitSet)))
 }
-export function msb(bitSet) {
-    return 0
+
+export function msb(bitSet){
+    return msbWrapped(bitSet,0)
+}
+export function msbWrapped(bitSet, acc) {//most set bit, not most significant bit
+    if(bitSet <= 1) {
+        return acc
+    }
+    else {
+        return msbWrapped(bitSet / 2n, acc+1)
+    }
 }

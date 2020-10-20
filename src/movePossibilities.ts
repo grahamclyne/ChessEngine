@@ -1,4 +1,3 @@
-import {BitSet} from "./bitset";
 import * as utils from './utils'
 import * as constants from './constants'
 import * as bsutil from './bitSetUtils'
@@ -25,7 +24,7 @@ export function pawnPossibilities (board,colour,history) {
         OFF_LIMIT_PIECES=~(board.get('WP')|board.get('WN')|board.get('WB')|board.get('WR')|board.get('WQ')|board.get('WK')|board.get('BK')); //added *K to avoid illegal capture
         OPPOSING_PIECES=(board.get('BP')|(board.get('BN'))|(board.get('BB'))|(board.get('BR'))|(board.get('BQ'))); //omitted *K to avoid illegal capture
         EMPTY=board.get('WP')|(board.get('WN'))|(board.get('WB'))|(board.get('WR'))|(board.get('WQ'))|(board.get('WK'))|(board.get('BP'))|(board.get('BN'))|(board.get('BB'))|(board.get('BR'))|(board.get('BQ'))|(~board.get('BK'));
-        shiftFunction = function(x,y) {return x >> y}
+        shiftFunction = function(x,y) {return x << y}
         lastRank = constants.RANK_8;
         leftSide = constants.FILE_A;
         rightSide = constants.FILE_H;
@@ -38,7 +37,7 @@ export function pawnPossibilities (board,colour,history) {
         OFF_LIMIT_PIECES=~(board.get("BP")|board.get("BN")|board.get("BB")|board.get("BR")|board.get("BQ")|board.get("BK")|board.get("WK")); 
         OPPOSING_PIECES=board.get('WP')|board.get('WN')|board.get('WB')|board.get('WR')|board.get('WQ'); 
         EMPTY=board.get('BP')|board.get('BN')|board.get('BB')|board.get('BR')|board.get('BQ')|board.get('BK')|board.get('WP')|board.get('WN')|board.get('WB')|board.get('WR')|board.get('WQ')|~board.get('WK');
-        shiftFunction = function(x,y) {return x << y}
+        shiftFunction = function(x,y) {return x >> y}
         lastRank = constants.RANK_1;
         leftSide = constants.FILE_H;
         rightSide = constants.FILE_A;
@@ -51,10 +50,10 @@ export function pawnPossibilities (board,colour,history) {
     //check for en passant
     let lastMove = history[history.length - 1]
     if(lastMove != null && (lastMove[2] == 'P') && Math.abs(lastMove[1] - lastMove[0]) == 16){ //if last move was a pawn moving two squares
-        if(piecesToMove.array[lastMove[1] + 1] == 1){ //to the right if white, to the left if black
+        if(bsutil.get(piecesToMove,lastMove[1] + 1)== 1){ //to the right if white, to the left if black
             possibleMoves.push([lastMove[1] + 1, enpassant(lastMove[1],8), 'P','EN'])
         }
-        else if(piecesToMove.array[lastMove[1] - 1] == 1){
+        else if(bsutil.get(piecesToMove,lastMove[1] - 1) == 1){
             possibleMoves.push([lastMove[1] - 1, enpassant(lastMove[1],8), 'P','EN'])
         }
     }
@@ -66,12 +65,12 @@ export function pawnPossibilities (board,colour,history) {
     possibleMoves = possibleMoves.concat(generatePossibleMoves(PAWN_MOVES,f1,f2, 'P', 'N')) 
 
     //1 forward
-    PAWN_MOVES=(shiftFunction(piecesToMove,8n)&(EMPTY)&(~lastRank));
+    var PAWN_MOVES=(shiftFunction(piecesToMove,8n)&(EMPTY)&(~lastRank));
     var f1 = function (num) {return (operator(num,8))}
     var f2 = function (num) {return (num)}
     possibleMoves = possibleMoves.concat(generatePossibleMoves(PAWN_MOVES,f1,f2, 'P', 'N'))
 
-    //capture left
+    // //capture left
     PAWN_MOVES=shiftFunction(piecesToMove,7n)&(OPPOSING_PIECES)&(~lastRank)&(~leftSide);
     var f1 = function (num) {return (operator(num,7))}
     var f2 = function (num) {return (num)}
@@ -101,7 +100,7 @@ export function pawnPossibilities (board,colour,history) {
     var f1 = function (num) {return (operator(num,9))}
     var f2 = function (num) {return (num)}
     possibleMoves = possibleMoves.concat(generatePossibleMoves(PAWN_MOVES,f1,f2, 'P', 'P'))
-    console.log(possibleMoves)
+   //console.log(possibleMoves)
 
     return possibleMoves
 }

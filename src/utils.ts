@@ -40,15 +40,20 @@ export function setFileMasks() {
 }
 
 export function prettyPrintBoard(board) {
-    bsutil.printBitSet(board.get("WP"))
+    var bitSet = board.get("WP")
+    bitSet = BigInt.asUintN(64,BigInt(bitSet))
+    var white = bitSet.toString(2).split("").reverse()
+    bitSet = board.get("BP")
+    bitSet = BigInt.asUintN(64,BigInt(bitSet))
+    var black = bitSet.toString(2).split("").reverse()
     var finBoard = Array(64);
     finBoard.fill("-- ")
-    board.get('WP').toString().split("").reverse().map((el,index) => {
+    white.map((el,index) => {
         if (el == 1) {
             finBoard[index] = 'WP '
         }
     })
-    board.get("BP").toString().split("").reverse().map((el, index) => {
+    black.map((el, index) => {
         if (el == 1) {
             finBoard[index] = 'BP '
         }

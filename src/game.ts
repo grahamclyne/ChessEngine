@@ -1,8 +1,6 @@
 
-import { BitSet } from "./bitset";
 import * as wpp from './movePossibilities'
 import * as utils from './utils'
-import * as ts from 'typescript'
 import * as bsutil from './bitSetUtils'
 
 
@@ -10,8 +8,7 @@ export function pickMove(colour, history, board) {
     var movePossibilities = wpp.pawnPossibilities(board, colour, history)
     let rand = Math.floor(Math.random() * movePossibilities.length)
     var move = movePossibilities[rand]
-    // console.log(movePossibilities)
-    // console.log(rand, move)
+  //  console.log(move)
     handleMoveType(move[3]) //TODO
     makeMove(move, move[2], colour, board)
     return move
@@ -34,22 +31,23 @@ export function checkCapture(move, board, colour) {
         for(let index = 0; index < 64; index++) {
             if (bsutil.get(bitSet,index) == 1 && index == move[1]) {
                 console.log("PIECE CAPTURED")
-                bsutil.set(board.get(key),index, 0)
+                board.set(key,bsutil.set(board.get(key),index, 0))
             }
+        }
     }
 }
-}
+
 //function w side effect!!!
 export function makeMove(move, piece, colour, board) {
     //let result = eval(ts.transpile(colour + piece))
     checkCapture(move, board, colour)
-    bsutil.set(board.get(colour + piece),move[0], 0)
-    bsutil.set(board.get(colour + piece),move[1], 1)
+    board.set(colour+piece,bsutil.set(board.get(colour + piece),move[0], 0))
+    board.set(colour+piece,bsutil.set(board.get(colour + piece),move[1], 1))
 }
 
 export function play(board, moveHistory) {
     var move_count = 0;
-    while (move_count < 2) {
+    while (move_count < 15) {
         moveHistory.push(pickMove('W', moveHistory, board))
         console.log("WHITE MOVE:");
         utils.prettyPrintBoard(board)
