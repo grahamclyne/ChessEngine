@@ -1,19 +1,20 @@
-import { BitSet } from './bitset'
+import * as bsutil from './bitSetUtils'
 
 
 
 
 export function setRankMasks() {
     var rankMasks = [];
-    var rank = new BitSet();
+    var rank = 0n;
     var x = 0;
     while (x < 64) {
-        if ((x + 1) % 8 == 0 && x != 0) {
-            rankMasks.push(rank.set(x, 1).clone());
-            rank.clear();
+        if ((x+1) % 8 == 0 && x != 0) {
+            rank = bsutil.set(rank,x,1)
+            rankMasks.push(rank);
+            rank = 0n;
         }
         else {
-            rank.set(x, 1);
+            rank = bsutil.set(rank,x,1)
         }
         x = x + 1;
     }
@@ -22,73 +23,42 @@ export function setRankMasks() {
 
 export function setFileMasks() {
     var fileMasks = [];
-    var file = new BitSet();
+    var file = 0n;
     var y = 0
     var x = 0
     while (y < 8) {
         x = y
         while (x < 64) {
-            file.set(x, 1);
+            file = bsutil.set(file,x,1)
             x = x + 8
         }
-        fileMasks.push(file.clone());
-        file.clear();
+        fileMasks.push(file);
+        file = 0n;
         y = y + 1;
     }
     return fileMasks
 }
 
-export function leftShift(bitSet, distance) {
-    var shifted = new BitSet();
-    bitSet.array.map(function (el, index, obj) {
-        if (bitSet.array[index] == 1 && (index - distance) >= 0) {
-            shifted.array[index - distance] = 1
-        }
-    })
-    return shifted;
-}
-export function rightShift(bitSet, distance) {
-    var shifted = new BitSet()
-    bitSet.array.map(function (el, index, obj) {
-        if (bitSet.array[index] == 1 && (index + distance) <= 63) {
-            shifted.array[index + distance] = 1
-        }
-    })
-    return shifted;
-}
-
 export function prettyPrintBoard(board) {
-    var finBoard = new BitSet();
-    finBoard.array.fill("-- ")
-    board.get('WP').array.map(function (el, index) {
+    bsutil.printBitSet(board.get("WP"))
+    var finBoard = Array(64);
+    finBoard.fill("-- ")
+    board.get('WP').toString().split("").reverse().map((el,index) => {
         if (el == 1) {
-            finBoard.array[index] = 'WP '
+            finBoard[index] = 'WP '
         }
     })
-    board.get("BP").array.map(function (el, index) {
+    board.get("BP").toString().split("").reverse().map((el, index) => {
         if (el == 1) {
-            finBoard.array[index] = 'BP '
+            finBoard[index] = 'BP '
         }
     })
-    finBoard.print()
-}
-
-export function and(bitSet1: BitSet, bitSet2:BitSet) {
-    var anded = new BitSet()
-    bitSet1.array.map(function(el,index,obj) {
-        if(el == 1 && bitSet2.array[index] == 1) {
-            anded.array[index] = 1;
+    finBoard.map(function(el, index){
+        if((index + 1) % 8 == 0 && index != 0) {
+            process.stdout.write(el + "\n")
         }
-
-    })
-    return anded
-}
-export function or(bitSet1: BitSet, bitSet2:BitSet) {
-    var ored = new BitSet()
-    bitSet1.array.map(function(el,index,obj) {
-        if(el == 1 || bitSet2.array[index] == 1) {
-            ored.array[index] = 1;
+        else{
+            process.stdout.write(el)
         }
-    })
-    return ored
+    })  
 }

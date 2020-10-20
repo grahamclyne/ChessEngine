@@ -1,48 +1,45 @@
 import * as util from './utils'
 import * as wpp from './movePossibilities'
-
+import * as bsutil from './bitSetUtils'
 import * as R from "ramda";
 import * as game from './game'
-import { BitSet } from './bitset';
-import { moveCursor } from 'readline';
+import * as constants from './constants'
+var WP = 0n;
+var WR = 0n;
+var WN = 0n;
+var WB = 0n;
+var WQ = 0n;
+var WK = 0n;
+var BP = 0n;
+var BR = 0n;
+var BN = 0n;
+var BB = 0n;
+var BQ = 0n;
+var BK = 0n;
 
+WP = bsutil.setRange(WP,8,15,1);
+WR = bsutil.set(WR,0,1)
+WR = bsutil.set(WR,7,1)
+WN = bsutil.set(WN,1,1)
+WN = bsutil.set(WN,6,1)
+WB = bsutil.set(WB,2,1)
+WB = bsutil.set(WB,5,1)
+WQ = bsutil.set(WQ,3,1)
+WK = bsutil.set(WK,4,1)
 
-var WP = new BitSet();
-var WR = new BitSet();
-var WN = new BitSet();
-var WB = new BitSet();
-var WQ = new BitSet();
-var WK = new BitSet();
+BP = bsutil.setRange(BP,48,55,1);
+BR = bsutil.set(BR,0+56,1)
+BR = bsutil.set(BR,7+56,1)
+BN = bsutil.set(BN,1+56,1)
+BN = bsutil.set(BN,6+56,1)
+BB = bsutil.set(BB,2+56,1)
+BB = bsutil.set(BB,5+56,1)
+BQ = bsutil.set(BQ,3+56,1)
+BK = bsutil.set(BK,4+56,1)
 
-var BP = new BitSet();
-var BR = new BitSet();
-var BN = new BitSet();
-var BB = new BitSet();
-var BQ = new BitSet();
-var BK = new BitSet();
-
-WP.setRange(8,15,1);
-WR.set(0,1);
-WR.set(7,1);
-WN.set(1,1);
-WN.set(6,1);
-WB.set(2,1);
-WB.set(5,1);
-WQ.set(4,1);
-WK.set(5,1);
-
-BP.setRange(48,55,1);
-BR.set(0+56,1);
-BR.set(7+56,1);
-BN.set(1+56,1);
-BN.set(6+56,1);
-BB.set(2+56,1);
-BB.set(5+56,1);
-BQ.set(4+56,1);
-BK.set(5+56,1);
 var board = new Map()
-board.set('WP',WP)
-board.set('WN',WN)
+ board.set('WP',WP)
+ board.set('WN',WN)
 board.set('WB',WB)
 board.set('WR',WR)
 board.set('WQ',WQ)
@@ -55,3 +52,4 @@ board.set('BQ',BQ)
 board.set('BK',BK)
 var moveHistory = []
 game.play(board,moveHistory)
+//"C:\Users\Graham Clyne\Documents\chessEngine\node_modules\.bin\tsc.cmd" && node dist\src\main.js

@@ -1,11 +1,13 @@
 import {BitSet} from './bitset';
-import * as helper from './utils'
+import * as util from './utils'
 
-var rankMasks: BitSet[] = helper.setRankMasks();
-var fileMasks: BitSet[] = helper.setFileMasks();
-export const RANK_8:BitSet = rankMasks[7];
-export const RANK_4:BitSet = rankMasks[3];
-export const RANK_1:BitSet = rankMasks[0];
-export const RANK_5:BitSet = rankMasks[4];
-export const FILE_H:BitSet = fileMasks[7];
-export const FILE_A:BitSet = fileMasks[0];
+export const rankMasks: bigint[] = util.setRankMasks();
+export const fileMasks: bigint[] = util.setFileMasks();
+export const RANK_8:bigint = rankMasks[7];
+export const RANK_4:bigint = rankMasks[3];
+export const RANK_1:bigint = rankMasks[0];
+export const RANK_2:bigint = rankMasks[1];
+export const RANK_3:bigint = rankMasks[2];
+export const RANK_5:bigint = rankMasks[4];
+export const FILE_H:bigint = fileMasks[7];
+export const FILE_A:bigint = fileMasks[0];

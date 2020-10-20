@@ -22,3 +22,6 @@ A1 	B1 	C1 	D1 	E1 	F1 	G1 	H1
 
 
 "c:\Users\Graham Clyne\Documents\chessEngine\node_modules\.bin\tsc.cmd" && node dist\main.js
+
+
+we use jest because mohca/chai does not have support for bigint
