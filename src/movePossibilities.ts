@@ -2,11 +2,12 @@ import * as utils from './utils'
 import * as constants from './constants'
 import * as bsutil from './bitSetUtils'
 import * as R from "ramda";
-import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
+import * as magic from "./magic"
+import { DH_NOT_SUITABLE_GENERATOR, SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
 
 
 
-export function pawnPossibilities(board, colour, history) {
+export function getPawnMoves(board, colour, history) {
     let BOARD_STATE = 0
     BOARD_STATE = R.reduce(function (x, y) { return x | y }, BOARD_STATE, Array.from(board.values))
     let possibleMoves = []
@@ -101,69 +102,7 @@ export function pawnPossibilities(board, colour, history) {
     f1 = function (num) { return (operator(num, 9)) }
     f2 = function (num) { return (num) }
     possibleMoves = possibleMoves.concat(generatePossibleMoves(PAWN_MOVES, f1, f2, 'P', 'P'))
-
     return possibleMoves
-}
-
-export function rookMoveshyberbola(board) {
-    let movePossibilities = []
-    let BOARD_STATE = 0n
-
-    BOARD_STATE = R.reduce(function (x, y) { return x | y }, BOARD_STATE, Array.from(board.values()))
-
-    let rooksonboard = board.get("WR");
-    let firstRook = bsutil.lsb(rooksonboard)
-    let secondRook = bsutil.msb(rooksonboard)
-
-
-    //https://www.chessprogramming.org/Subtracting_a_Rook_from_a_Blocking_Piece
-    //https://www.chessprogramming.org/Hyperbola_Quintessence
-    let rooks = [firstRook]
-    for (var j in rooks) {
-        console.log('rook' + rooks[j])
-        let rank = constants.rankMasks[Math.floor(rooks[j] / 8)]
-        let file = constants.fileMasks[Math.floor(rooks[j] % 8)]
-        let masks = [rank, file]
-        let slider = bsutil.set(0n, rooks[j], 1);
-        bsutil.printBitSet(slider)
-        for (var i in masks) {
-            console.log("MASK")
-
-            let occupied = masks[i] & (BOARD_STATE)
-            // lineAttacks=(o-2r) ^ reverse( o'-2r')
-            var nonreversed = ((occupied) - (2n * slider))
-            var reversed = bsutil.reverse(bsutil.reverse(occupied) - (2n * bsutil.reverse(slider)))
-            bsutil.printBitSet(occupied)
-            bsutil.printBitSet(slider)
-            bsutil.printBitSet(occupied - slider)
-            bsutil.printBitSet(occupied - (2n * slider))
-            bsutil.printBitSet(nonreversed)
-            console.log("REVERSE")
-            bsutil.printBitSet(bsutil.reverse(occupied))
-            bsutil.printBitSet(bsutil.reverse(slider))
-            bsutil.printBitSet(bsutil.reverse(occupied) - bsutil.reverse(slider))
-            bsutil.printBitSet(bsutil.reverse(occupied) - (2n * bsutil.reverse(slider)))
-            bsutil.printBitSet(nonreversed)
-            let lineAttacks = (nonreversed ^ reversed) & masks[i]
-            bsutil.printBitSet(lineAttacks)
-            console.log('\n')
-            break
-        }
-    }
-    // occupied=11000101
-    // slider=00000100
-    // o-s=11000001
-    // o-2s=10111101
-    // left=o^(o-2s)=01111000
-    // reverse(10011)=11001 
-    // right=(o'^(o'-2s'))'=00000011
-    //  reverse(a^b)=reverse(a)^reverse(b)
-    // right=o^(o'-2s')'
-    // lineAttacks=right^left
-    // lineAttacks= (o-2s) ^ (o'-2s')'
-    // m=mask
-
-    return movePossibilities
 }
 
 export function generatePossibleMoves(bitSet, f1, f2, piece, moveType) {
@@ -182,108 +121,76 @@ export function generatePossibleMoves(bitSet, f1, f2, piece, moveType) {
 }
 
 
-export function rMask(sq: bigint) {
-    let result = 0n;
-    let rk = sq / 8n, fl = sq % 8n, r, f;
-    for (r = rk + 1n; r <= 6n; r++) result |= (1n << (fl + r * 8n));
-    for (r = rk - 1n; r >= 1n; r--) result |= (1n << (fl + r * 8n));
-    for (f = fl + 1n; f <= 6n; f++) result |= (1n << (f + rk * 8n));
-    for (f = fl - 1n; f >= 1n; f--) result |= (1n << (f + rk * 8n));
-    return result;
-}
 
-
-export function bMask(sq: bigint) {
-    let result = 0n;
-    let rk = sq / 8n, fl = sq % 8n, r, f;
-    for (r = rk + 1n, f = fl + 1n; r <= 6n && f <= 6n; r++, f++) result |= (1n << (f + r * 8n));
-    for (r = rk + 1n, f = fl - 1n; r <= 6n && f >= 1n; r++, f--) result |= (1n << (f + r * 8n));
-    for (r = rk - 1n, f = fl + 1n; r >= 1n && f <= 6n; r--, f++) result |= (1n << (f + r * 8n));
-    for (r = rk - 1n, f = fl - 1n; r >= 1n && f >= 1n; r--, f--) result |= (1n << (f + r * 8n));
-    return result;
-}
 
 export function rookMoves(occ, sq) {
-    occ &= rMask(sq);
-    occ *= utils.magicR[sq];
-    occ >>= (64n - BigInt(utils.nRBits[sq]))
-    return rookAttacksOnTheFly(occ, sq)
+    //could use whole occupancy board,but would map to too many possibilties, following line gives us a reduced occupancy that is much more manageable
+    let occ1 =occ
+    bsutil.printBitSet(bsutil.set(0n, Number(sq), 1))
+    bsutil.printBitSet(occ)
+    bsutil.printBitSet(magic.rMask(sq))
+    occ &= magic.rMask(sq);
+    //
+    bsutil.printBitSet(occ)
+    occ *= magic.rook_magic_numbers[sq];
+  //  occ *= magic.findMagic(sq,utils.nRBits[sq],0)
+    bsutil.printBitSet(occ)
+    occ >>= (64n - BigInt(magic.nRBits[Number(sq)]))
+    console.log("FINAL")
+    bsutil.printBitSet(occ)
+    return magic.rookAttacksOnTheFly(occ1, sq)
+}
+
+export function getRookMoves(board,colour){
+    let possibleMoves = []
+    let rooks = (colour == 'W') ? board.get("WR") : board.get("BR");
+    let rookPiece = BigInt(bsutil.msb(rooks))
+    let occ = R.reduce((x,y) => {return x | y}, 0n, Array.from(board.values()))
+    let bb = rookMoves(occ,rookPiece)
+    bsutil.printBitSet(bb)
+    return generatePossibleMoves(bb, (x) => rookPiece, (x) => x, "R", "N")
 }
 export function bishopMoves(occ, sq) {
-    occ &= rMask(sq);
-    occ *= utils.magicR[sq];
-    occ >>= (64n - BigInt(utils.nRBits[sq]))
-    return bishopAttacksOnTheFly(occ, sq)
+    //  occ &= magic.rMask(sq);
+    //  occ *= utils.magicR[sq];
+    //  occ >>= (64n - BigInt(magic.nRBits[sq]))
+     return magic.bishopAttacksOnTheFly(occ, sq)
 }
+
 export function knightMoves(occ, sq) {
-    let attacks = 0n;
-    let rank = (sq/8n) + 1n 
-    let file = (sq%8n) + 2n
-    attacks |= 1n << (rank + file)
-    attacks |= 1n << (sq + 8n - 3n)
-    attacks |= 1n << (sq - 8n + 3n)
-    attacks |= 1n << (sq - 8n - 3n)
-    attacks |= 1n << (sq + 1n + 24n)
-    attacks |= 1n << (sq + 1n - 24n)
-    attacks |= 1n << (sq - 1n + 24n)
-    attacks |= 1n << (sq - 1n - 24n)
+    let attacks = 0n
+    let bitboard = bsutil.set(0n, sq, 1)
+    if ((bitboard >> 17n) & ~constants.FILE_H) attacks |= (bitboard >> 17n);
+    if ((bitboard >> 15n) & ~constants.FILE_A) attacks |= (bitboard >> 15n);
+    if ((bitboard >> 10n) & (~constants.FILE_H & ~constants.FILE_G)) attacks |= (bitboard >> 10n);
+    if ((bitboard >> 6n) & (~constants.FILE_A & ~constants.FILE_B)) attacks |= (bitboard >> 6n);
+    if ((bitboard << 17n) & ~constants.FILE_A) attacks |= (bitboard << 17n);
+    if ((bitboard << 15n) & ~constants.FILE_H) attacks |= (bitboard << 15n);
+    if ((bitboard << 10n) & (~constants.FILE_A & ~constants.FILE_B)) attacks |= (bitboard << 10n);
+    if ((bitboard << 6n) & (~constants.FILE_H & ~constants.FILE_G)) attacks |= (bitboard << 6n);
+    attacks = BigInt.asUintN(64, BigInt(attacks))
     return attacks
 }
 
-export function knightAttacksOnTheFly(occ,sq){
-
+export function queenMoves(occ, sq) {
+    // occ &= rMask(sq);
+    // occ *= utils.magicR[sq];
+    // occ >>= (64n - BigInt(utils.nRBits[sq]))
+    // return bishopAttacksOnTheFly(occ, sq) | rookAttacksOnTheFly(occ, sq)
 }
 
-export function bishopAttacksOnTheFly(occ, sq) {
+export function kingMoves(occ, sq) {
     let attacks = 0n;
-    let pieceRank = sq / 8n, pieceFile = sq % 8n, rank, file;
-    for (rank = pieceRank + 1n, file = pieceFile + 1n; rank <= 7n && file <= 7n; rank++, file++) {
-        let pos = (1n << (rank * 8n + file))
-        attacks |= (pos);
-        if (pos & occ) break;
-    }
-    for (rank = pieceRank + 1n, file = pieceFile - 1n; rank <= 7n && file >= 0n; rank++, file--) {
-        let pos = (1n << (rank * 8n + file))
-        attacks |= (pos);
-        if (pos & occ) break;
-    }
-    for (rank = pieceRank - 1n, file = pieceFile + 1n; rank >= 0n && file <= 7n; rank--, file++) {
-        let pos = (1n << (rank * 8n + file))
-        attacks |= (pos);
-        if (pos & occ) break;
-    }
-    for (rank = pieceRank - 1n, file = pieceFile - 1n; rank >= 0n && file >= 0n; rank--, file--) {
-        let pos = (1n << (rank * 8n + file))
-        attacks |= (pos);
-        if (pos & occ) break;
-    }
-    return attacks;
-}
-export function rookAttacksOnTheFly(occ, sq) {
-
-    let attacks = 0n;
-    let pieceRank = sq / 8n, pieceFile = sq % 8n, rank, file;
-    //rank to the right 
-    for (rank = pieceRank + 1n; rank <= 7n; rank++) {
-        //set bit to 1 (1n << ...) if not anded with occ)
-        attacks |= (1n << (rank * 8n + pieceFile));
-        if ((1n << (rank * 8n + pieceFile)) & occ) break;
-    }
-    //rank to the left
-    for (rank = pieceRank - 1n; rank >= 0; rank--) {
-        attacks |= (1n << (rank * 8n + pieceFile));
-        if ((1n << (rank * 8n + pieceFile)) & occ) break;
-    }
-    //file above
-    for (file = pieceFile + 1n; file <= 7n; file++) {
-        attacks |= (1n << (pieceRank * 8n + file));
-        if ((1n << (pieceRank * 8n + file)) & occ) break;
-    }
-    //file below
-    for (file = pieceFile - 1n; file >= 0; file--) {
-        attacks |= (1n << (pieceRank * 8n + file));
-        if ((1n << (pieceRank * 8n + file)) & occ) break;
-    }
-    // return attack map
-    return attacks;
+    let bitboard = bsutil.set(0n, Number(sq), 1)
+    //the not constants.FILE_H is to stop wraparound!!!
+    if ((bitboard >> 1n) & ~constants.FILE_H) attacks |= (bitboard >> 1n);
+    if ((bitboard >> 7n) & ~constants.FILE_A) attacks |= (bitboard >> 7n);
+    attacks |= (bitboard >> 8n);
+    if ((bitboard >> 9n) & ~constants.FILE_H) attacks |= (bitboard >> 9n);
+    if ((bitboard << 1n) & ~constants.FILE_A) attacks |= (bitboard << 1n);
+    if ((bitboard << 7n) & ~constants.FILE_H) attacks |= (bitboard << 7n);
+    attacks |= (bitboard << 8n);
+    if ((bitboard << 9n) & ~constants.FILE_A) attacks |= (bitboard << 9n);
+    attacks = BigInt.asUintN(64, BigInt(attacks)) //truncate... this probably slowing things down? 
+    return attacks
 }

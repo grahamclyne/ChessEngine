@@ -5,10 +5,12 @@ import * as bsutil from './bitSetUtils'
 
 
 export function pickMove(colour, history, board) {
-  //  var movePossibilities = wpp.pawnPossibilities(board, colour, history)
-  var movePossibilities = mp.rookMoves(board,0n)
-  //  let rand = Math.floor(Math.random() * movePossibilities.length)
-    let rand = 0
+  var movePossibilities = mp.getPawnMoves(board, colour, history)
+  movePossibilities.concat(mp.getRookMoves(board,colour))
+//   movePossibilities.concat(mp.getBishopMoves(board))
+//   movePossibilities.concat(mp.getQueenMoves(board))
+//   movePossibilities.concat(mp.getKingMoves(board))
+  let rand = Math.floor(Math.random() * movePossibilities.length)
   var move = movePossibilities[rand]
   //  console.log(move)
     handleMoveType(move[3]) //TODO

@@ -40,7 +40,7 @@ export function get(bitSet, index){
 
 
 export function  lsb(bitSet) { //least set bit, not least significant bit
-    return Math.log2(Number((bitSet) & (-bitSet)))
+    return ilog2((bitSet) & (-bitSet))
 }
 
 export function msb(bitSet){

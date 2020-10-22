@@ -1,5 +1,6 @@
 import * as constants from '../constants'
 import * as bsutil from '../bitSetUtils'
+import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants'
 test('rankMasks', () => {
     let vals = [255n,65280n,16711680n, 4278190080n,1095216660480n,280375465082880n,71776119061217280n,18374686479671623680n]
     constants.rankMasks.map((el, index) => {
@@ -19,7 +20,6 @@ test('set bitset', () => {
 //    expect(bsutil.set(mask,64,1)).toBe(Math.pow(2,64))
 })
 
-
 test('lsb', () => {
     let mask0 = 1n;
     let mask = 2n;
@@ -28,6 +28,7 @@ test('lsb', () => {
     let mask3 = 16n;
     let mask4 = 256n;
     let mask5 = 255n;
+    let mask6 = bsutil.set(0n, 20, 1)
     expect(bsutil.lsb(mask0)).toBe(0)
     expect(bsutil.lsb(mask)).toBe(1)
     expect(bsutil.lsb(mask1)).toBe(2)
@@ -35,6 +36,7 @@ test('lsb', () => {
     expect(bsutil.lsb(mask3)).toBe(4)
     expect(bsutil.lsb(mask4)).toBe(8)
     expect(bsutil.lsb(mask5)).toBe(0)
+    expect(bsutil.lsb(mask6)).toBe(20)
 })
 
 test('msb', () => {
@@ -50,13 +52,4 @@ test('msb', () => {
     expect(bsutil.msb(mask3)).toBe(4)
     expect(bsutil.msb(mask4)).toBe(8)
     expect(bsutil.msb(mask5)).toBe(7)
-})
-
-test('reverse', () => {
-    let num = 4n;
-    expect(bsutil.reverse(num)).toBe(1n)
-    num = 101n;
-    expect(bsutil.reverse(num)).toBe(83n)
-    num = 3286n;
-    expect(bsutil.reverse(num)).toBe(1715n)
 })

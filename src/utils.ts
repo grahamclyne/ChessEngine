@@ -1,6 +1,7 @@
 import * as bsutil from './bitSetUtils'
 import { fileMasks } from './constants';
 import * as constants from './constants'
+import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
 
 
 export function setRankMasks() {
@@ -89,6 +90,19 @@ let BB = bsutil.set(0n,2+56,1)
 BB = bsutil.set(BB,5+56,1)
 let BQ = bsutil.set(0n,3+56,1)
 let BK = bsutil.set(0n,4+56,1)
+
+WP = 0n;
+WR = bsutil.set(0n, 30, 1)
+WN = bsutil.set(0n, 29, 1);
+WB = 0n;
+WQ = 0n;
+WK = 0n;
+BP = 0n;
+BR = 0n;
+BN = 0n;
+BB = 0n;
+BQ = 0n;
+BK = 0n;
 
 let board = new Map()
 board.set('WP',WP)
@@ -190,25 +204,3 @@ export const magicR =[
 	0x800040100944822n
 ]
 
-
-export const nRBits = [
-	12, 11, 11, 11, 11, 11, 11, 12,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	12, 11, 11, 11, 11, 11, 11, 12,
-]
-
-export const nBBits = [
-	6, 5, 5, 5, 5, 5, 5, 6,
-	5, 5, 5, 5, 5, 5, 5, 5,
-	5, 5, 7, 7, 7, 7, 5, 5,
-	5, 5, 7, 9, 9, 7, 5, 5,
-	5, 5, 7, 9, 9, 7, 5, 5,
-	5, 5, 7, 7, 7, 7, 5, 5,
-	5, 5, 5, 5, 5, 5, 5, 5,
-	6, 5, 5, 5, 5, 5, 5, 6,
-]
