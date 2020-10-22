@@ -54,3 +54,16 @@ export function msbWrapped(bitSet, acc) {//most set bit, not most significant bi
         return msbWrapped(bitSet / 2n, acc+1)
     }
 }
+export function reverse(bitSet){
+//split into 8 bit chunks
+    return BigInt(0)
+}
+
+
+//can optimize via webassembly? see https://stackoverflow.com/questions/55355184/optimized-integer-logarithm-base2-for-bigint
+function ilog2(n) {  // n is a positive non-zero BigInt
+    const C1 = BigInt(1)
+    const C2 = BigInt(2)
+    for(var count=0; n>C1; count++)  n = n/C2
+    return count
+ } // example ilog2(16n)==4

@@ -1,13 +1,15 @@
 
-import * as wpp from './movePossibilities'
+import * as mp from './movePossibilities'
 import * as utils from './utils'
 import * as bsutil from './bitSetUtils'
 
 
 export function pickMove(colour, history, board) {
-    var movePossibilities = wpp.pawnPossibilities(board, colour, history)
-    let rand = Math.floor(Math.random() * movePossibilities.length)
-    var move = movePossibilities[rand]
+  //  var movePossibilities = wpp.pawnPossibilities(board, colour, history)
+  var movePossibilities = mp.rookMoves(board,0n)
+  //  let rand = Math.floor(Math.random() * movePossibilities.length)
+    let rand = 0
+  var move = movePossibilities[rand]
   //  console.log(move)
     handleMoveType(move[3]) //TODO
     makeMove(move, move[2], colour, board)

@@ -51,3 +51,12 @@ test('msb', () => {
     expect(bsutil.msb(mask4)).toBe(8)
     expect(bsutil.msb(mask5)).toBe(7)
 })
+
+test('reverse', () => {
+    let num = 4n;
+    expect(bsutil.reverse(num)).toBe(1n)
+    num = 101n;
+    expect(bsutil.reverse(num)).toBe(83n)
+    num = 3286n;
+    expect(bsutil.reverse(num)).toBe(1715n)
+})
