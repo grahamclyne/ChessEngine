@@ -1,7 +1,7 @@
 import { RANK_8 } from "./constants"
 import * as R from 'ramda'
 export function printBitSet(bitSet) {
-    bitSet = BigInt.asUintN(100,bitSet)
+    bitSet = BigInt.asUintN(200,bitSet)
     var x = bitSet.toString(2).split("").reverse()
     x.map(function(el, index){
         if((index + 1) % 8 == 0 && index != 0) {

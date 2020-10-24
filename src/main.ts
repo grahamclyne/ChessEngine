@@ -49,5 +49,13 @@ let board = util.newBoard(WP,BP)
 // bsutil.printBitSet(~constants.FILE_A)
 // bsutil.printBitSet(mp.kingMoves(board.get("WP"),BigInt(sq)))
 //console.log(mp.getRookMoves(board, 'W'))
-game.play(board,[]);
+//game.play(board,[]);
+BP1 = bsutil.setRange(0n, 48, 55, 1);
+BR1 = bsutil.set(0n, 0 + 56, 1)
+BR1 = bsutil.set(BR1, 7 + 56, 1)
+BP = [BP1, 'BP']
+BR = [BR1, 'BR']
+board = util.newBoard(BP, BR)
+let attackBoard = mp.getAttackBoard('B', board)
+bsutil.printBitSet(attackBoard)
 //bsutil.printBitSet(constants.fileMasks[sq%8]|constants.rankMasks[Math.floor(sq/8)])

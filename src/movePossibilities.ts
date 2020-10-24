@@ -68,14 +68,13 @@ export function getPawnMoves(board, colour, history) {
 
     //1 forward
     PAWN_MOVES = shiftFunction(piecesToMove, 8n) & EMPTY & bsutil.not(lastRank);
-    bsutil.printBitSet(PAWN_MOVES)
     f1 = function (num) { return (operator(num, 8)) }
     f2 = function (num) { return (num) }
     possibleMoves = possibleMoves.concat(generatePossibleMoves(PAWN_MOVES, f1, f2, 'P', 'N'))
 
     // //capture left
-    PAWN_MOVES = shiftFunction(piecesToMove, 7n) & (OPPOSING_PIECES) & bsutil.not(lastRank) & bsutil.not(leftSide);
-    f1 = function (num) { return (operator(num, 7)) }
+    PAWN_MOVES = shiftFunction(piecesToMove, 9n) & (OPPOSING_PIECES) & bsutil.not(lastRank) & bsutil.not(leftSide);
+    f1 = function (num) { return (operator(num, 9)) }
     f2 = function (num) { return (num) }
     possibleMoves = possibleMoves.concat(generatePossibleMoves(PAWN_MOVES, f1, f2, 'P', 'N'))
 
@@ -121,11 +120,17 @@ export function generatePossibleMoves(bitSet, f1, f2, piece, moveType) {
     return possibleMoves;
 }
 
-export function pawnAttacks(occ,pawns,colour){
+export function pawnAttacks(occ,pawnBoard,colour){
     let attacks = 0n;
     if(colour == 'W'){
-        attacks |= 
+        attacks |= (pawnBoard << 7n) & bsutil.not(constants.FILE_H);
+        attacks |= (pawnBoard << 9n) & bsutil.not(constants.FILE_A);
+      }
+    else{
+        attacks |= (pawnBoard >> 7n) & bsutil.not(constants.FILE_A);
+        attacks |= (pawnBoard >> 9n) & bsutil.not(constants.FILE_H);
     }
+    return attacks;
 }
 export function rookMoves(occ, sq) {
     //could use whole occupancy board,but would map to too many possibilties, following line gives us a reduced occupancy that is much more manageable
@@ -183,54 +188,76 @@ export function kingMoves(occ, sq) {
     return attacks
 }
 
-export function getPieceMoves(bitBoard, occ, pieces, f, initial){
+export function getPieceMoves(bitBoard, occ, pieces, f,pieceName){
     if(bitBoard == 0n){ //none of these pieces exist
         return []
     }
     let piece1 = BigInt(bsutil.msb(bitBoard))
     let piece2 = BigInt(bsutil.lsb(bitBoard))
     if(piece1 == piece2){
-        return generatePossibleMoves(f(occ,piece1)&BigInt(bsutil.not(pieces)),(x) => Number(piece1), x => Number(x), initial, "N")
+        return [f(occ,piece1)&BigInt(bsutil.not(pieces)),piece1,pieceName]
     }
     else{
-        return generatePossibleMoves(f(occ,piece1)&BigInt(bsutil.not(pieces)),(x) => Number(piece1), x => Number(x), initial, "N")
-        .concat(generatePossibleMoves(f(occ,piece2)&BigInt(bsutil.not(pieces)),(x) => Number(piece2), x => Number(x), initial, "N"))
+        return [[f(occ,piece1)&BigInt(bsutil.not(pieces)),piece1],
+       [f(occ,piece2)&BigInt(bsutil.not(pieces)),piece2]]
     }
 }
 
-
+export function convertMovesToList(board, piece,pieceName){
+    return generatePossibleMoves(board, (x) =>Number(piece), x => Number(x), pieceName, "N")
+}
 export function getMoves(board, colour, history) {
     let occupancy = R.reduce((x, y) => { return x | y }, 0n, Array.from(board.values()))
-    
+    let moves = []
+    let pawns = []
     if (colour == 'W') {
         let WHITE_PIECES = board.get('WP') | board.get('WN') | board.get('WB') | board.get('WR') | board.get('WQ') | board.get('WK')
-        return getPieceMoves(board.get("WK"), occupancy,WHITE_PIECES,kingMoves,"K")
+        moves = getPieceMoves(board.get("WK"), occupancy,WHITE_PIECES,kingMoves,"K")
         .concat(getPieceMoves(board.get("WQ"), occupancy,WHITE_PIECES,queenMoves,"Q"))
         .concat(getPieceMoves(board.get("WN"), occupancy,WHITE_PIECES,knightMoves,"N"))
-        .concat(getPieceMoves(board.get("WB"), occupancy,WHITE_PIECES,bishopMoves,"B"))
+        .concat(getPieceMoves(board.get("WB"), occupancy,WHITE_PIECES,bishopMoves,'B'))
         .concat(getPieceMoves(board.get("WR"), occupancy,WHITE_PIECES,rookMoves,"R"))
-        .concat(getPawnMoves(board, "W", history))
-
+        pawns = getPawnMoves(board, "W", history)
     }
     else {
         let BLACK_PIECES = (board.get('BP') | (board.get('BN')) | (board.get('BB')) | (board.get('BR')) | (board.get('BQ') | board.get('BK'))); 
-        return getPieceMoves(board.get("BK"), occupancy,BLACK_PIECES,kingMoves,"K")
+        moves = getPieceMoves(board.get("BK"), occupancy,BLACK_PIECES,kingMoves,"K")
         .concat(getPieceMoves(board.get("BQ"), occupancy,BLACK_PIECES,queenMoves,"Q"))
         .concat(getPieceMoves(board.get("BN"), occupancy,BLACK_PIECES,knightMoves,"N"))
         .concat(getPieceMoves(board.get("BB"), occupancy,BLACK_PIECES,bishopMoves,"B"))
         .concat(getPieceMoves(board.get("BR"), occupancy,BLACK_PIECES,rookMoves,"R"))
-        .concat(getPawnMoves(board, "B", history))       
+        pawns = getPawnMoves(board, "B", history)    
     }
+    let movesFin = []
+    for (let i in moves){
+        movesFin = movesFin.concat(convertMovesToList(moves[i][0],moves[i][1],moves[i][2]))
+    }
+    return movesFin.concat(pawns)
 }
 
 export function getAttackBoard(colour,board){
     let occupancy = R.reduce((x, y) => { return x | y }, 0n, Array.from(board.values()))
-    let attacks = 0n;
+    let moves = [];
     if(colour == 'W'){
-        attacks |= rookMoves(occupancy,bsutil.lsb(board.get('WR')))
-        
+        let WHITE_PIECES = board.get('WP') | board.get('WN') | board.get('WB') | board.get('WR') | board.get('WQ') | board.get('WK')
+        moves = getPieceMoves(board.get("WK"), occupancy,WHITE_PIECES,kingMoves,"K")
+        .concat(getPieceMoves(board.get("WQ"), occupancy,WHITE_PIECES,queenMoves,"Q"))
+        .concat(getPieceMoves(board.get("WN"), occupancy,WHITE_PIECES,knightMoves,"N"))
+        .concat(getPieceMoves(board.get("WB"), occupancy,WHITE_PIECES,bishopMoves,'B'))
+        .concat(getPieceMoves(board.get("WR"), occupancy,WHITE_PIECES,rookMoves,"R"))
+        .concat(pawnAttacks(occupancy,board.get("WP"),'W'))
     }
-    else{
-
+    else {
+        let BLACK_PIECES = (board.get('BP') | (board.get('BN')) | (board.get('BB')) | (board.get('BR')) | (board.get('BQ') | board.get('BK'))); 
+        moves = getPieceMoves(board.get("BK"), occupancy,BLACK_PIECES,kingMoves,"K")
+        .concat(getPieceMoves(board.get("BQ"), occupancy,BLACK_PIECES,queenMoves,"Q"))
+        .concat(getPieceMoves(board.get("BN"), occupancy,BLACK_PIECES,knightMoves,"N"))
+        .concat(getPieceMoves(board.get("BB"), occupancy,BLACK_PIECES,bishopMoves,"B"))
+        .concat(getPieceMoves(board.get("BR"), occupancy,BLACK_PIECES,rookMoves,"R"))
+        .concat([[pawnAttacks(occupancy, board.get("BP"), 'B'),0n]])
     }
+    moves = moves.map(x => x[0])
+    let attackBoard = R.reduce((x,y) => {return x | y},0n, moves)
+    
+    return attackBoard
 }

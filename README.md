@@ -25,3 +25,6 @@ A1 	B1 	C1 	D1 	E1 	F1 	G1 	H1
 
 
 we use jest because mohca/chai does not have support for bigint
+
+
+how can history and board state be coupled that neither can be out of sync?
