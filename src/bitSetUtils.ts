@@ -1,7 +1,7 @@
 import { RANK_8 } from "./constants"
 import * as R from 'ramda'
 export function printBitSet(bitSet) {
-    bitSet = BigInt.asUintN(64,BigInt(bitSet))
+    bitSet = BigInt.asUintN(100,bitSet)
     var x = bitSet.toString(2).split("").reverse()
     x.map(function(el, index){
         if((index + 1) % 8 == 0 && index != 0) {
@@ -14,7 +14,7 @@ export function printBitSet(bitSet) {
     console.log("\n")
 }
 export function set(bitSet:bigint, index, value) {
-    let x:bigint = BigInt(Math.floor(Math.pow(2, (index))))
+    let x:bigint = BigInt(Math.floor(Math.pow(2,  Number(index))))
     if(value == 1){
         return (x|bitSet)
     }
@@ -67,3 +67,9 @@ function ilog2(n) {  // n is a positive non-zero BigInt
     for(var count=0; n>C1; count++)  n = n/C2
     return count
  } // example ilog2(16n)==4
+
+ 
+ export function not(bitSet){
+    bitSet = BigInt.asUintN(64,BigInt(~bitSet))
+    return bitSet
+ }

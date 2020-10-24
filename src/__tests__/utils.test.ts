@@ -53,3 +53,8 @@ test('msb', () => {
     expect(bsutil.msb(mask4)).toBe(8)
     expect(bsutil.msb(mask5)).toBe(7)
 })
+
+test('not', () => {
+    let mask = BigInt(Math.pow(2, 64))
+    expect(bsutil.not(mask)).toBe(BigInt(Math.pow(2,64))-1n)
+})

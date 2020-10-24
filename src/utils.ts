@@ -41,23 +41,16 @@ export function setFileMasks() {
 }
 
 export function prettyPrintBoard(board) {
-    let bitSet = board.get("WP")
-    bitSet = BigInt.asUintN(64,BigInt(bitSet))
-    let white = bitSet.toString(2).split("").reverse()
-    bitSet = board.get("BP")
-    bitSet = BigInt.asUintN(64,BigInt(bitSet))
-    let black = bitSet.toString(2).split("").reverse()
     let finBoard = Array(64);
     finBoard.fill("-- ")
-    white.map((el,index) => {
-        if (el == 1) {
-            finBoard[index] = 'WP '
-        }
-    })
-    black.map((el, index) => {
-        if (el == 1) {
-            finBoard[index] = 'BP '
-        }
+    board.forEach((key,value) => {
+        let bitSet = BigInt.asUintN(64,BigInt(key))
+        let black = bitSet.toString(2).split("").reverse()   
+        black.map((el, index) => {
+            if (el == '1') {
+                finBoard[index] = value + " "
+            }
+        })
     })
     finBoard.map(function(el, index){
         if((index + 1) % 8 == 0 && index != 0) {
@@ -70,54 +63,23 @@ export function prettyPrintBoard(board) {
 }
 
 
-export function newBoard() {
-let WP = bsutil.setRange(0n,8,15,1);
-let WR = bsutil.set(0n,0,1)
-WR = bsutil.set(WR,7,1)
-let WN = bsutil.set(0n,1,1)
-WN = bsutil.set(WN,6,1)
-let WB = bsutil.set(0n,2,1)
-WB = bsutil.set(WB,5,1)
-let WQ = bsutil.set(0n,3,1)
-let WK = bsutil.set(0n,4,1)
-
-let BP = bsutil.setRange(0n,48,55,1);
-let BR = bsutil.set(0n,0+56,1)
-BR = bsutil.set(BR,7+56,1)
-let BN = bsutil.set(0n,1+56,1)
-BN = bsutil.set(BN,6+56,1)
-let BB = bsutil.set(0n,2+56,1)
-BB = bsutil.set(BB,5+56,1)
-let BQ = bsutil.set(0n,3+56,1)
-let BK = bsutil.set(0n,4+56,1)
-
-WP = 0n;
-WR = bsutil.set(0n, 30, 1)
-WN = bsutil.set(0n, 29, 1);
-WB = 0n;
-WQ = 0n;
-WK = 0n;
-BP = 0n;
-BR = 0n;
-BN = 0n;
-BB = 0n;
-BQ = 0n;
-BK = 0n;
-
+export function newBoard(...pieces) {
 let board = new Map()
-board.set('WP',WP)
-board.set('WN',WN)
-board.set('WB',WB)
-board.set('WR',WR)
-board.set('WQ',WQ)
-board.set('WK',WK)
-board.set('BP',BP)
-board.set('BN',BN)
-board.set('BB',BB)
-board.set('BR',BR)
-board.set('BQ',BQ)
-board.set('BK',BK)
-
+board.set('WP', 0n)
+board.set('WN', 0n)
+board.set('WB', 0n)
+board.set('WR', 0n)
+board.set('WQ', 0n)
+board.set('WK', 0n)
+board.set('BP', 0n)
+board.set('BN', 0n)
+board.set('BB', 0n)
+board.set('BR', 0n)
+board.set('BQ', 0n)
+board.set('BK', 0n)
+for(var i in pieces){
+	board.set(pieces[i][1], pieces[i][0])
+}
 return board;
 }
 

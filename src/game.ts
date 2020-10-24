@@ -5,14 +5,13 @@ import * as bsutil from './bitSetUtils'
 
 
 export function pickMove(colour, history, board) {
-  var movePossibilities = mp.getPawnMoves(board, colour, history)
-  movePossibilities.concat(mp.getRookMoves(board,colour))
-//   movePossibilities.concat(mp.getBishopMoves(board))
-//   movePossibilities.concat(mp.getQueenMoves(board))
-//   movePossibilities.concat(mp.getKingMoves(board))
+  let movePossibilities = mp.getMoves(board,colour,history)
   let rand = Math.floor(Math.random() * movePossibilities.length)
   var move = movePossibilities[rand]
-  //  console.log(move)
+  //does move put king in check
+    if(move == undefined){
+        throw new Error("No valid moves to choose from");
+    }
     handleMoveType(move[3]) //TODO
     makeMove(move, move[2], colour, board)
     return move
@@ -51,7 +50,7 @@ export function makeMove(move, piece, colour, board) {
 
 export function play(board, moveHistory) {
     var move_count = 0;
-    while (move_count < 15) {
+    while (move_count < 5) {
         moveHistory.push(pickMove('W', moveHistory, board))
         console.log("WHITE MOVE:");
         utils.prettyPrintBoard(board)
