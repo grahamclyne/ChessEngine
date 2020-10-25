@@ -59,3 +59,33 @@ test('not', () => {
     let mask = BigInt(Math.pow(2, 64))
     expect(bsutil.not(mask)).toBe(BigInt(Math.pow(2,64))-1n)
 })
+
+test('count 1s', () => {
+    let x = BigInt('0b111110000')
+    expect(util.count_1s(x)).toBe(5n)
+    let y = BigInt('0b1010110011')
+    expect(util.count_1s(y)).toBe(6n)
+    let z = 0n
+    expect(util.count_1s(z)).toBe(0n)
+    let w = BigInt('0b11000000000000000000000000000011')
+    expect(util.count_1s(w)).toBe(4n)
+})
+
+
+test('piece count', () => {
+    let BP1 = bsutil.setRange(0n,48,55,1);
+let BR1 = bsutil.set(0n,0+56,1)
+BR1 = bsutil.set(BR1,7+56,1)
+let BN1 = bsutil.set(0n,1+56,1)
+BN1 = bsutil.set(BN1,6+56,1)
+let BB1 = bsutil.set(0n,2+56,1)
+BB1 = bsutil.set(BB1,5+56,1)
+
+let BP = [BP1, 'BP']
+let BR = [BR1,'BR']
+let BN = [BN1, 'BN']
+let BB = [BB1,'BB']
+
+let board = util.newBoard(BP,BR,BN,BB)
+expect(util.pieceCount(board)).toBe(14n)
+})

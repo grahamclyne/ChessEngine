@@ -1,8 +1,7 @@
 import * as bsutil from './bitSetUtils'
 import { fileMasks } from './constants';
 import * as constants from './constants'
-import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
-
+import * as R from 'ramda'
 
 export function setRankMasks() {
     let rankMasks = [];
@@ -165,3 +164,13 @@ export const magicR =[
 	0x10310090a00b824n,
 	0x800040100944822n
 ]
+
+export function pieceCount(board:Map<string,bigint>) : bigint {
+	let count = R.reduce(count_1s, 0n, Array.from(board.values()))
+	return count
+}
+export function count_1s(b:bigint) :bigint { 
+    let r = 0n;
+    for(r = 0n; b; r++, b &= b - 1n);
+    return r;
+  }

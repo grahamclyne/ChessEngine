@@ -1,7 +1,7 @@
 import * as bsutil from '../bitSetUtils'
-import * as mp from '../movePossibilities'
+import * as mp from '../moves'
 import * as util from '../utils'
-
+import * as R from 'ramda'
 
 test('rook moves', () => {
   expect(0).toBe(0)
@@ -67,6 +67,15 @@ test('pawn: black pawn promotion', () => {
   expect(mp.getPawnMoves(board, 'B', [])[0][3]).toBe('P')
 })
 
+test('king: king with potential check', () => {
+  let WK = [bsutil.set(0n, 4n, 1),'WK'];
+  let BR = [bsutil.set(0n, 8n, 1),'BR'];
+  let board = util.newBoard(WK,BR)
+  let occupancy = R.reduce((x, y) => { return x | y }, 0n, Array.from(board.values()))
+
+  expect(mp.kingMovesActual(occupancy,4,mp.getAttackBoard('B',board,true))).toBe(BigInt('0b101000'))
+})
+
 test('attack board generation: white', () => {
   let BP1 = bsutil.setRange(0n, 48, 55, 1);
   let BR1 = bsutil.set(0n, 0 + 56, 1)
@@ -74,15 +83,21 @@ test('attack board generation: white', () => {
   let BP = [BP1, 'BP']
   let BR = [BR1, 'BR']
   let board = util.newBoard(BP, BR)
-  let attackBoard = mp.getAttackBoard('B', board)
+  let attackBoard = mp.getAttackBoard('B', board,false)
   expect(attackBoard).toBe(
     BigInt("0b\
-000000000\
-000000000\
-000000000\
-000000000\
-000000000\
+01111110\
+00000000\
 11111111\
 00000000\
-01111110"))
+00000000\
+00000000\
+00000000\
+00000000"))
+})
+
+test('pawn: attacks', () => {
+  let WP1 = bsutil.setRange(0n,8,15,1);
+  let attacks = mp.pawnAttacks(WP1,'W')
+  expect(mp.pawnAttacks(WP1,'W')).toStrictEqual([[BigInt('0b111111110000000000000000'),0n,"P"]])
 })

@@ -40,7 +40,7 @@ export function get(bitSet, index){
 
 
 export function  lsb(bitSet) { //least set bit, not least significant bit
-    return ilog2((bitSet) & (-bitSet))
+    return ilog2(BigInt((bitSet) & (-bitSet)))
 }
 
 export function msb(bitSet){
@@ -61,7 +61,7 @@ export function reverse(bitSet){
 
 
 //can optimize via webassembly? see https://stackoverflow.com/questions/55355184/optimized-integer-logarithm-base2-for-bigint
-function ilog2(n) {  // n is a positive non-zero BigInt
+function ilog2(n:bigint) {  // n is a positive non-zero BigInt
     const C1 = BigInt(1)
     const C2 = BigInt(2)
     for(var count=0; n>C1; count++)  n = n/C2

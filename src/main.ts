@@ -3,8 +3,8 @@ import * as bsutil from './bitSetUtils'
 import * as R from "ramda";
 import * as game from './game'
 import * as constants from './constants'
-import * as mp from './movePossibilities'
-
+import * as mp from './moves'
+import * as check from './check'
 
 let BP1 = bsutil.setRange(0n,48,55,1);
 let BR1 = bsutil.set(0n,0+56,1)
@@ -49,13 +49,14 @@ let board = util.newBoard(WP,BP)
 // bsutil.printBitSet(~constants.FILE_A)
 // bsutil.printBitSet(mp.kingMoves(board.get("WP"),BigInt(sq)))
 //console.log(mp.getRookMoves(board, 'W'))
-//game.play(board,[]);
-BP1 = bsutil.setRange(0n, 48, 55, 1);
-BR1 = bsutil.set(0n, 0 + 56, 1)
-BR1 = bsutil.set(BR1, 7 + 56, 1)
-BP = [BP1, 'BP']
-BR = [BR1, 'BR']
-board = util.newBoard(BP, BR)
-let attackBoard = mp.getAttackBoard('B', board)
-bsutil.printBitSet(attackBoard)
+BR = [bsutil.set(0n, 8,1), "BR"]
+BQ = [bsutil.set(0n,0,1), 'BQ']
+WK = [bsutil.set(0n, 4, 1), "WK"]
+board = util.newBoard(BR, WK,BQ); 
+let occ= R.reduce((x, y) => { return x | y }, 0n, Array.from(board.values()))
+let attack = mp.getAttackBoard('B',board)
+let kingCheck = check.isKingCheck(board.get('WK'),attack)
+bsutil.printBitSet(attack)
+let actualKings = mp.kingMovesActual(occ,4,attack)
+bsutil.printBitSet(actualKings)
 //bsutil.printBitSet(constants.fileMasks[sq%8]|constants.rankMasks[Math.floor(sq/8)])
