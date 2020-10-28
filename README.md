@@ -25,6 +25,7 @@ A1 	B1 	C1 	D1 	E1 	F1 	G1 	H1
 
 
 we use jest because mohca/chai does not have support for bigint
+javascript/typescript - Objects and arrays are passed by reference. Primitive values like number, string, boolean are passed by value. A reference to an object is also a primitive type and passed by value like other primitive types, but the object it refers to is still passed by reference.
 
-
+global variable CHECK_FLAG in game.ts a good idea?
 how can history and board state be coupled that neither can be out of sync?
