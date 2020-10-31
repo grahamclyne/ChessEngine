@@ -1,6 +1,6 @@
 import * as Benchmark from 'benchmark'
 import * as bsutil from './bitSetUtils'
-import * as util from './utils'
+import * as util from './util'
 
 
 var suite = new Benchmark.Suite;

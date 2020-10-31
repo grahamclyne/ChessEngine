@@ -41,15 +41,15 @@ export function setFileMasks() {
 export function prettyPrintBoard(board) {
 	let finBoard = Array(64);
 	let files = [1, 2, 3, 4, 5, 6, 7, 8]
-	let ranks = ['  H  ', 'G  ', 'F  ', 'E  ', 'D  ', 'C  ', 'B  ', 'A  \n']
+	let ranks = ['  A  ', 'B  ', 'C  ', 'D  ', 'E  ', 'F  ', 'G  ', 'H  \n']
 	finBoard.fill("-- ")
 	let fileCount = 0;
-	board.forEach((key, value) => {
-		let bitSet = BigInt.asUintN(64, BigInt(key))
+	board.forEach((value,key) => {
+		let bitSet = BigInt.asUintN(64, BigInt(value))
 		let black = bitSet.toString(2).split("").reverse()
 		black.map((el, index) => {
 			if (el == '1') {
-				finBoard[index] = value + " "
+				finBoard[index] = key + " "
 			}
 		})
 
@@ -63,7 +63,7 @@ export function prettyPrintBoard(board) {
 
 
 		if ((index + 1) % 8 == 0 && index != 0) {
-			process.stdout.write(el + "\n")
+			process.stdout.write('\x1b[93m' + el + "\x1b[39m\n")
 		}
 		else {
 			process.stdout.write(el)
@@ -185,7 +185,7 @@ export function count_1s(b: bigint): bigint {
 	return r;
 }
 
-export function pow(b: bigint, exponent): bigint {
+export function pow(b: bigint, exponent:number): bigint {
 	let output = 1n
 	while (exponent > 0) {
 		output = b * output

@@ -2,7 +2,7 @@
 //aplha beta pruning
 //monte carlo
 
-export function calculateStrength(colour,board){
+export function staticEvaluation(colour,board){
 
 }
 

@@ -1,20 +1,23 @@
 
 import * as moves from './moves'
-import * as utils from './utils'
+import * as util from './util'
 import * as bsutil from './bitSetUtils'
 import * as check from './check'
 import { reduce, filter } from 'lodash'
-import * as readline from 'readline';
-
+import * as player from './player'
 
 var CHECK_FLAG = false
 
 import { Logger } from "tslog";
 const log: Logger = new Logger({ name: "myLogger" });
 
+
+//=============================  GAME MECHANICS  =============================//
+//============================================================================//
+//all modifications to board live here
+
 export function findMoves(colour: string, history, board: Map<string, bigint>) {
     let occupancy = reduce(Array.from(board.values()), (x, y) => { return x | y }, 0n)
-
     let legalMoves = moves.getMoves(board, colour, history)
     if (moves.canCastleKingSide(occupancy, history, colour)) {
         legalMoves.push(['CASTLE-KING'])
@@ -25,45 +28,25 @@ export function findMoves(colour: string, history, board: Map<string, bigint>) {
     return legalMoves
 }
 
-//side effect with move inputted
-export function checkCapture(move, board, colour, piece) {
-    let out = utils.deepCloneMap(board)
-    if (move[3] == 'EN') {
-        if (colour == 'W') {
-            out.set(colour + 'P', bsutil.set(out.get(colour + 'P'), move[1] - 8, 0))
-        }
-        else {
-            out.set(colour + 'P', bsutil.set(out.get(colour + 'P'), move[1] + 8, 0))
-        }
-        return out
-    }
-    //look through all other bitmaps to see if overlap, if so set to 0
-    for (let key of board.keys()) {
-        if(key == colour + piece){
-            continue
-        }
-        var bitSet = board.get(key)
-        for (let index = 0; index < 64; index++) {
-            if (bsutil.get(bitSet, index) == 1 && index == move[1]) {
-                out.set(key, bsutil.set(out.get(key), index, 0))
-                move[3] = 'C'
-                break;
-            }
-        }
-    }
-    return out
-}
-
 export function makeMove(move, colour: string, board: Map<string, bigint>) {
-    let out = utils.deepCloneMap(board)
+    console.log('move in makemove', move)
+    let oppColour = (colour == 'W') ? 'B' : 'W'
+    let out = util.deepCloneMap(board)
+    if (move[3] == 'EN') { //en passant logic
+        let passantOp =  (colour == 'W') ? (x,y) => {return x - y} : (x,y) => {return x + y}
+        out.set(oppColour + 'P', bsutil.set(out.get(oppColour + 'P'), passantOp(move[1],8), 0))
+    }
     let squares = []
-    let piece = move[2]
-    if (piece != null) {//ie, not a castle
-        out = checkCapture(move, board, colour, piece)
-        out.set(colour + piece, bsutil.set(out.get(colour + piece), move[0], 0))
-        out.set(colour + piece, bsutil.set(out.get(colour + piece), move[1], 1))
-        if (move[3] == 'P') {
-            out = promotePawn(move[1], out, colour)
+    if (move[2]!= null) {//ie, not a castle, this logic suxx
+        //actually move the piece
+        out.set(colour + move[2], bsutil.set(out.get(colour + move[2]), move[0], 0))
+        out.set(colour + move[2], bsutil.set(out.get(colour + move[2]), move[1], 1))
+        if (move[3] == 'P') { //if pawn promotion
+            out.set(colour + 'P', bsutil.set(out.get(colour + 'P'), move[1], 0))
+            out.set(colour + 'Q', bsutil.set(out.get(colour + 'Q'), move[1], 1)) // always to a queen
+        }
+        if(move[4][0] == 'C'){// if its a capture
+            out.set(oppColour + move[4][1], bsutil.set(out.get(oppColour + move[4][1]), move[1], 0))
         }
         return out
     }
@@ -77,94 +60,30 @@ export function makeMove(move, colour: string, board: Map<string, bigint>) {
     out.set(colour + 'K', bsutil.set(out.get(colour + 'K'), squares[0], 1))
     out.set(colour + 'R', bsutil.set(out.get(colour + 'R'), squares[3], 0))
     out.set(colour + 'R', bsutil.set(out.get(colour + 'R'), squares[2], 1))
-    utils.prettyPrintBoard(out)
     return out
 }
-
-
 
 
 export async function play(board, history, opponent) {
     let colour = 'W'
     let states = []
-    let mate = 0
-    let sameMove = false
-    let fifty = false
-
-    while (mate != 2 && sameMove == false && fifty == false) {
+    while (true) {
         board = takeTurn(board, history, colour, states)
         colour = (colour == 'W') ? 'B' : 'W'
-        mate = checkForMate(colour, board)
-        sameMove = sameMoveCheck(states)
-        fifty = fiftyMoves(history)
-
-        log.info('game over conditions: mate:', mate, ',sameMove: ', sameMove, ' fifty: ', fifty)
+        if (checkEndGameConditions(board,states,history,colour)) break
         if (opponent == 'HUMAN') {
-            let move = await parseInput()
-            board = makeMove(move,colour,board)
-            while(!isValidMove(move,board,colour)){
-                let move = await parseInput()
+            let move = null
+            while(move == null){
+                move = await player.parseInput(colour,history,board)
             }
+            board = makeMove(move,colour,board)
             history.push(move)
             colour = (colour == 'W') ? 'B' : 'W'
             log.info("PLAYER MOVE: ", move)
-            utils.prettyPrintBoard(board)
+            if (checkEndGameConditions(board,states,history,colour)) break
+            util.prettyPrintBoard(board)
         }
     }
-}
-
-export function isValidMove(move,board,colour) {
-    let pieceBoard = board.get(colour + move[2])
-    if(!bsutil.get(pieceBoard,move[0])){
-        log.error(move[2] + 'does not exist on that square')
-        return false
-    }
-    return true
-}
-
-
-
-
-
-//move syntax
-//[piece][startsquare][endsquare]
-//eg. Ke4e5
-//Pe4e6
-export function parseInput() {
-
-    let rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-    return new Promise((resolve,reject) => {
-        let pMove = []
-        rl.setPrompt('Make your move: ')
-        rl.prompt()
-        rl.on('line', (move) => {
-            if (move.length != 5) {
-                log.error('Improper input: need [PNKQBR][startfile][startrow][endfile][endrow]')
-                rl.prompt()
-            }
-            else {
-                let pieceName = move[0]
-                let startSquare = move.slice(1, 3)
-                let endSquare = move.slice(3, 5)
-                parseInputSquare(startSquare)
-                parseInputSquare(endSquare)
-                pMove = [parseInputSquare(startSquare), parseInputSquare(endSquare), pieceName, 'N']
-                rl.close()
-                resolve(pMove)
-            }
-        })
-    })
-}
-
-export function parseInputSquare(sq) {
-    let row = sq[0]
-    let file = sq[1]
-    let rows = { 'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7 }
-    return (rows[row] + ((file - 1) * 8))
 }
 
 //function with side effect (on state, and history object)
@@ -181,44 +100,61 @@ export function takeTurn(board, history, colour, states) {
             CHECK_FLAG = false
         }
         else {
-            legalMoves = legalMoves.filter((x) => { if (!utils.arrayEquals(x, move)) return x })
+            legalMoves = legalMoves.filter((x) => { if (!util.arrayEquals(x, move)) return x })
         }
         let rand = Math.floor(Math.random() * legalMoves.length)
         move = legalMoves[rand]
-        log.info('Move to get out of check', move)
+        log.info('Move to get out of check:' + move)
     }
 
     history.push(move)
     let newBoard = makeMove(move, colour, board)
     let state = reduce( Array.from(newBoard.values()),(x, y) => { return x | y }, 0n)
     states.push(state)
-    utils.prettyPrintBoard(newBoard)
+    util.prettyPrintBoard(newBoard)
     return newBoard
 }
 
-export function checkForMate(colour: string, board: Map<string, bigint>) {
-    let checked = check.isCheck(colour, board)
-    let checkmate = check.isCheckMate(colour, board)
-    if (checkmate) {
-        return 2
+
+
+
+//=============================  END GAME LOGIC  =============================//
+//============================================================================//
+
+export function checkEndGameConditions(board:Map<string,bigint>,states:Array<bigint>,history,colour){
+    let oppColour = (colour == 'W') ? 'B' : 'W'
+    if(checkForMate(colour, board,history) == 1) {
+        log.info('Checkmate')
+        return true
     }
-    if (checked) {
-        log.info(colour + "put other into Check")
+    if(checkForMate(colour, board,history) == 2) {
+        log.info('Stalemate')
+        return true
+    }
+    if(sameBoardStateFiveTimes(states)) {
+        log.info('Same board state 5 times. ')
+        return true
+    }
+    if(fiftyMoves(history)) {
+        log.info('fifty moves condition')
+        return true
+    }
+    if(!(hasEnoughMaterial(board,colour) || hasEnoughMaterial(board,oppColour))) {
+        log.info('Not enough material, stalemate')
+        return true
+    }
+    return false
+}
+
+export function checkForMate(colour: string, board: Map<string, bigint>,history) {
+    if (check.isCheck(colour, board)) {
+        log.info(colour + " put other player into Check")
         CHECK_FLAG = true
     }
-    return 0
+    return check.isCheckMate(colour, board,history)
 }
 
-
-//funciton w side effect
-export function promotePawn(sq, board, colour) {
-    let out = utils.deepCloneMap(board)
-    out.set(colour + 'P', bsutil.set(out.get(colour + 'P'), sq, 0))
-    out.set(colour + 'Q', bsutil.set(out.get(colour + 'Q'), sq, 1)) // always to a queen
-    return out
-}
-
-export function sameMoveCheck(states: Array<bigint>) {
+export function sameBoardStateFiveTimes(states: Array<bigint>) {
     let grouped = reduce(states, (rv, x) => { if (rv.get(x) == undefined) { rv.set(x, 1) } else { rv.set(x, rv.get(x) + 1) }; return rv; }, new Map())
     let filtered = filter(Array.from(grouped), (x) => (x[1] == 5))
     if (filtered.length > 0) {
@@ -229,7 +165,7 @@ export function sameMoveCheck(states: Array<bigint>) {
 
 //The fifty-move rule in chess states that a player can claim a draw if no capture has been made and no pawn has been moved in the last fifty moves 
 //(for this purpose a "move" consists of a player completing their turn followed by the opponent completing their turn)
-export function fiftyMoves(history) {
+export function fiftyMoves(history :Array<Array<number | string>>) {
     //get last fifty moves
     if (history.length < 50) {
         return false
@@ -248,3 +184,21 @@ export function fiftyMoves(history) {
     return true
 }
 
+export function hasEnoughMaterial(board:Map<string,bigint>,colour:string){
+    if(board.get(colour + 'P') > 0n){
+        return true
+    }
+    if(board.get(colour + 'N') >0n && board.get(colour + 'B') > 0n){
+        return true
+    }
+    if(util.count_1s(board.get(colour + 'B')) == 2n){
+        return true 
+    }
+    if(board.get(colour + 'R') > 0n){
+        return true
+    }
+    if(board.get(colour + 'Q') > 0n){
+        return true
+    }
+    return false
+}

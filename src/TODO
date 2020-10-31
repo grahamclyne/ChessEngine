@@ -2,35 +2,22 @@ scenario where player has more than two queens
 premake move boards 
 stalemate vs checkmate
 consolidate castling logic
-lack of material to win
 add occ and attack boards? need to rememebr to update them at any point anything is updated
 expand isValidMove
-
-2020-10-27 18:51:02.320.000      INFO   [myLogger src\game.ts:96 Object.play]           game over conditions: mate: 0 ,sameMove:  false  fifty:  false
-2020-10-27 18:51:02.322.000      INFO   [myLogger src\game.ts:103 takeTurn]             W TURN:
-2020-10-27 18:51:02.325.000      INFO   [myLogger src\game.ts:110 takeTurn]             Move chosen:35,43,P,N
-  H  G  F  E  D  C  B  A
-1 -- WN -- -- -- -- -- WB
-2 -- BP -- BP -- -- -- WP
-3 -- BQ -- WP -- -- -- BP
-4 -- BN -- BP WR WB BN --
-5 -- BB WP BP WP WK -- BP
-6 -- -- BP WP -- BB -- --
-7 -- -- BK -- BR BP -- WP
-8 -- -- BR -- -- -- -- --
-2020-10-27 18:51:02.335.000      INFO   [myLogger src\game.ts:96 Object.play]           game over conditions: mate: 2 ,sameMove:  false  fifty:  false
-[
+is it correct to assume for attack boards, we should only consider our own pieces as occupied? we can still attack that square? 
+checkmate logic and turn logic both contain code to check if there is move to get out of check....
+capture logic test
 
 
- H  G  F  E  D  C  B  A
-1 -- -- -- WQ WK WB WN WR
-2 -- -- WP -- WP WP WP WP
-3 WR -- BB -- WB -- -- --
-4 WP -- WN -- -- -- -- --
-5 BP -- WP -- -- BP BP --
-6 -- -- -- BP -- -- -- --
-7 -- BP -- -- BP -- -- BP
-8 BR BN BB BQ BK -- BN BR
-2020-10-27 18:54:51.835.000      INFO   [myLogger src\game.ts:96 Object.play]           game over conditions: mate: 2 ,sameMove:  false  fifty:  false
-[
-    
+
+
+//STALEMATE SCENARIO DOESNT WORK
+  A  B  C  D  E  F  G  H
+1 -- -- -- -- -- -- -- --
+2 -- WR -- -- -- -- -- --
+3 -- -- -- -- -- -- -- --
+4 -- WR -- -- -- -- -- WK
+5 -- -- -- -- -- -- -- --
+6 -- WQ -- -- -- -- -- WP
+7 -- WP -- -- -- -- WP --
+8 -- BK -- -- -- -- -- --

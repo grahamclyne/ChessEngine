@@ -1,6 +1,6 @@
-import * as utils from './utils'
+import * as utils from './util'
 
-export function printBitSet(bitSet) {
+export function printBitSet(bitSet:bigint) {
     bitSet = BigInt.asUintN(200, bitSet)
     var x = bitSet.toString(2).split("").reverse()
     x.map(function (el, index) {

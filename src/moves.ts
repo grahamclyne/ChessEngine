@@ -1,12 +1,10 @@
-import * as utils from './utils'
+import * as utils from './util'
 import * as constants from './constants'
 import * as bsutil from './bitSetUtils'
 import * as magic from "./magic"
 import * as game from './game'
 import * as check from './check'
-import {reduce} from "lodash"
-
-
+import { reduce } from "lodash"
 export function getPawnMoves(board, colour, history) {
 
     let possibleMoves = []
@@ -44,10 +42,10 @@ export function getPawnMoves(board, colour, history) {
     let lastMove = history[history.length - 1]
     if (lastMove != null && (lastMove[2] == 'P') && Math.abs(lastMove[1] - lastMove[0]) == 16) { //if last move was a pawn moving two sqs
         if (bsutil.get(piecesToMove, lastMove[1] + 1) == 1) { //to the right if white, to the left if black
-            possibleMoves.push([lastMove[1] + 1, enpassant(lastMove[1], 8), 'P', 'EN'])
+            possibleMoves.push([lastMove[1] + 1, enpassant(lastMove[1], 8), 'P', 'EN', 'N'])
         }
         else if (bsutil.get(piecesToMove, lastMove[1] - 1) == 1) {
-            possibleMoves.push([lastMove[1] - 1, enpassant(lastMove[1], 8), 'P', 'EN'])
+            possibleMoves.push([lastMove[1] - 1, enpassant(lastMove[1], 8), 'P', 'EN', 'N'])
         }
     }
 
@@ -103,7 +101,7 @@ export function generatePossibleMoves(bitSet, f1, f2, piece, moveType) {
         if (el == 1) {
             let start = f1(index)
             let end = f2(index)
-            possibleMoves.push([start, end, piece, moveType])
+            possibleMoves.push([start, end, piece, moveType, 'N'])
         }
     }
     return possibleMoves;
@@ -142,7 +140,7 @@ export function bishopMoves(occ, sq) {
 
 export function knightMoves(sq) {
     let attacks = 0n
-    let bitboard = bsutil.set(0n,sq,1)
+    let bitboard = bsutil.set(0n, sq, 1)
     if ((bitboard >> 17n) & bsutil.not(constants.FILE_H)) attacks |= (bitboard >> 17n);
     if ((bitboard >> 15n) & bsutil.not(constants.FILE_A)) attacks |= (bitboard >> 15n);
     if ((bitboard >> 10n) & bsutil.not(constants.FILE_H) & bsutil.not(constants.FILE_G)) attacks |= (bitboard >> 10n);
@@ -164,7 +162,7 @@ export function queenMoves(occ, sq) {
 
 export function kingMoves(sq) {
     let attacks = 0n;
-    let bitboard = bsutil.set(0n,sq,1)
+    let bitboard = bsutil.set(0n, sq, 1)
     //the not constants.FILE_H is to stop wraparound!!!
     if ((bitboard >> 1n) & bsutil.not(constants.FILE_H)) attacks |= (bitboard >> 1n);
     if ((bitboard >> 7n) & bsutil.not(constants.FILE_A)) attacks |= (bitboard >> 7n);
@@ -179,7 +177,7 @@ export function kingMoves(sq) {
 }
 
 //get the places a king can actually move
-export function kingMovesActual(sq:number, attackBoard:bigint,pieces) {
+export function kingMovesActual(sq: number, attackBoard: bigint, pieces) {
     return kingMoves(sq) & (bsutil.not(attackBoard)) & bsutil.not(pieces)
 }
 
@@ -205,14 +203,14 @@ export function convertMovesToList(board, piece, pieceName) {
 }
 
 
-//the one outward point to game.ts
+//the one outward point to game.ts??
 export function getMoves(board, colour, history) {
     let occupancy = reduce(Array.from(board.values()), (x, y) => { return x | y }, 0n)
     let oppColour = (colour == 'W') ? 'B' : 'W'
     let PIECES = board.get(colour + 'P') | board.get(colour + 'N') | board.get(colour + 'B') | board.get(colour + 'R') | board.get(colour + 'Q') | board.get(colour + 'K')
-    let moves = getPieceMoves(board.get(colour + 'K'), occupancy, PIECES, (x, y) => kingMovesActual(y, getAttackBoard(oppColour,board,true),PIECES), "K")
+    let moves = getPieceMoves(board.get(colour + 'K'), occupancy, PIECES, (x, y) => kingMovesActual(y, getAttackBoard(oppColour, board, true), PIECES), "K")
         .concat(getPieceMoves(board.get(colour + 'Q'), occupancy, PIECES, queenMoves, "Q"))
-        .concat(getPieceMoves(board.get(colour + 'N'), occupancy, PIECES, (x,y) => knightMoves(y), "N"))
+        .concat(getPieceMoves(board.get(colour + 'N'), occupancy, PIECES, (x, y) => knightMoves(y), "N"))
         .concat(getPieceMoves(board.get(colour + 'B'), occupancy, PIECES, bishopMoves, 'B'))
         .concat(getPieceMoves(board.get(colour + 'R'), occupancy, PIECES, rookMoves, "R"))
     let pawns = getPawnMoves(board, colour, history)
@@ -221,16 +219,38 @@ export function getMoves(board, colour, history) {
         movesFin = movesFin.concat(convertMovesToList(moves[i][0], moves[i][1], moves[i][2]))
     }
     let movesNoCheck = findNoCheckMoves(movesFin.concat(pawns), board, colour)
-
-    return movesNoCheck
+    let movesWithCapture = findCaptures(movesNoCheck, board, colour)
+    return movesWithCapture
 }
 
+export function findCaptures(moves, board, colour) {
+    let newMoves = []
+    moves.forEach(move => {
+        let piece = move[2]
+
+        //look through all other bitmaps to see if overlap, if so set to 0
+        for (let key of board.keys()) {
+            if (key == colour + piece) {
+                continue
+            }
+            var bitSet = board.get(key)
+            for (let index = 0; index < 64; index++) {
+                if (bsutil.get(bitSet, index) == 1 && index == move[1]) {
+                    move[4] = 'C' + key[1]
+                    break;
+                }
+            }
+        }
+        newMoves.push(move)
+    })
+    return newMoves
+}
 
 export function findNoCheckMoves(moves, board: Map<string, bigint>, colour: string) {
     let movesNoCheck = []
     for (var move in moves) {
         let boardState = game.makeMove(moves[move], colour, board)
-        let c = check.isCheck(colour,boardState)
+        let c = check.isCheck(colour, boardState)
         if (!c) {
             movesNoCheck.push(moves[move])
         }
@@ -242,65 +262,66 @@ export function findNoCheckMoves(moves, board: Map<string, bigint>, colour: stri
 //gets all squares where colour can attack
 export function getAttackBoard(colour: string, board: Map<string, bigint>, forKing: boolean) {
     let occupancy = reduce(Array.from(board.values()), (x, y) => { return x | y }, 0n)
+
     let oppColour = (colour == 'W') ? 'B' : 'W'
     occupancy = (forKing) ? occupancy &= BigInt(bsutil.not(board.get(oppColour + 'K'))) : occupancy
 
-    let PIECES = board.get(colour + 'P') | board.get(colour + 'N') | board.get(colour + 'B') | board.get(colour + 'R') | board.get(colour + 'Q') | board.get(colour + 'K')
-    let moves = getPieceMoves(board.get(colour + 'K'), occupancy, PIECES, (x,y) => kingMoves(y), "K")
+    let PIECES = 0n;//board.get(colour + 'P') | board.get(colour + 'N') | board.get(colour + 'B') | board.get(colour + 'R') | board.get(colour + 'Q') | board.get(colour + 'K')
+    let moves = getPieceMoves(board.get(colour + 'K'), occupancy, PIECES, (x, y) => kingMoves(y), "K")
         .concat(getPieceMoves(board.get(colour + 'Q'), occupancy, PIECES, queenMoves, "Q"))
-        .concat(getPieceMoves(board.get(colour + 'N'), occupancy, PIECES, (x,y) => knightMoves(y), "N"))
+        .concat(getPieceMoves(board.get(colour + 'N'), occupancy, PIECES, (x, y) => knightMoves(y), "N"))
         .concat(getPieceMoves(board.get(colour + 'B'), occupancy, PIECES, bishopMoves, 'B'))
         .concat(getPieceMoves(board.get(colour + 'R'), occupancy, PIECES, rookMoves, "R"))
         .concat(pawnAttacks(board.get(colour + 'P'), colour))
     moves = moves.map(x => x[0])
-    return reduce( moves ,(x, y) => { return x | y }, 0n)
+    return reduce(moves, (x, y) => { return x | y }, 0n)
 }
 
 
-export function canCastleKingSide(occ:bigint, history, colour:string) {
+export function canCastleKingSide(occ: bigint, history, colour: string) {
     let rookPos = (colour == 'W') ? 7 : 63;
     let toMove = (colour == 'W') ? bsutil.setRange(0n, 5, 6, 1) : bsutil.setRange(0n, 61, 62, 1)
     let kingPos = (colour == 'W') ? 4 : 60;
-    if(!(bsutil.get(occ,kingPos) && bsutil.get(occ,rookPos))){
+    if (!(bsutil.get(occ, kingPos) && bsutil.get(occ, rookPos))) {
         return false
     }
     history = history.map(x => {
         if (x[2] == 'K') { //if king as moved
             return false
         }
-        if(x[0] == rookPos && x[2] == 'R'){ //if rook has moved
+        if (x[0] == rookPos && x[2] == 'R') { //if rook has moved
             return false
         }
     })
-    
-    if(history.includes(false)){
+
+    if (history.includes(false)) {
         return false
     }
-    if ((occ & toMove) > 0 ){ //if any pieces between
+    if ((occ & toMove) > 0) { //if any pieces between
         return false
     }
     return true
 }
-export function canCastleQueenSide(occ:bigint, history, colour:string) {
+export function canCastleQueenSide(occ: bigint, history, colour: string) {
     let rookPos = (colour == 'W') ? 0 : 56;
     let kingPos = (colour == 'W') ? 4 : 60;
-    if(!(bsutil.get(occ,kingPos) && bsutil.get(occ,rookPos))){
+    if (!(bsutil.get(occ, kingPos) && bsutil.get(occ, rookPos))) {
         return false
     }
-    let toMove = (colour == 'W') ? bsutil.setRange(0n, 1,3, 1) : bsutil.setRange(0n, 57, 59, 1)
+    let toMove = (colour == 'W') ? bsutil.setRange(0n, 1, 3, 1) : bsutil.setRange(0n, 57, 59, 1)
     history = history.map(x => {
         if (x[2] == 'K') { //if king as moved
             return false
         }
-        if(x[0] == rookPos && x[2] == 'R'){ //if rook has moved
+        if (x[0] == rookPos && x[2] == 'R') { //if rook has moved
             return false
         }
     })
-    if(history.includes(false)){
+    if (history.includes(false)) {
         return false
     }
-    if ((occ & toMove) > 0 ){
+    if ((occ & toMove) > 0) {
         return false
     }
-    return true    
+    return true
 }

@@ -1,6 +1,6 @@
 import * as bsutil from '../bitSetUtils'
 import * as moves from '../moves'
-import * as util from '../utils'
+import * as util from '../util'
 import * as game from '../game'
 import {reduce} from 'lodash'
 
@@ -42,7 +42,7 @@ test('pawn: black moves two forward', () => {
     expect(moves.getPawnMoves(board, 'B', []).length).toBe(2)
 })
 
-test('pawn: white en passant', () => {
+test('pawn: white en passant move option', () => {
     let WP = [bsutil.set(0n, 36, 1), "WP"]
     let BP = [bsutil.set(0n, 37, 1), "BP"]
     let history = [[53, 37, 'P', 'N']]
@@ -50,6 +50,16 @@ test('pawn: white en passant', () => {
     expect(moves.getPawnMoves(board, 'W', history).length).toBe(2)
     board.set('BP', 0n)
     expect(moves.getPawnMoves(board, 'W', []).length).toBe(1)
+})
+
+test('pawn: white en passant capture', () => {
+    let WP = [bsutil.set(0n, 36, 1), "WP"]
+    let BP = [bsutil.set(0n, 37, 1), "BP"]
+    let history = [[53, 37, 'P', 'N']]
+    let board = util.newBoard(WP, BP);
+    board = game.makeMove([36,45,'P','EN','N'],'W',board)
+    expect(util.count_1s(board.get('BP'))).toBe(0n)
+    expect(bsutil.get(board.get('WP'),45)).toBe(1)
 })
 
 test('pawn: black pawn promotion', () => {
@@ -68,7 +78,7 @@ test('king: king with potential check', () => {
     let pieces = board.get(colour + 'P') | board.get(colour + 'N') | board.get(colour + 'B') | board.get(colour + 'R') | board.get(colour + 'Q') | board.get(colour + 'K')
     let occupancy = reduce(Array.from(board.values()), (x, y) => { return x | y }, 0n)
     board.set('OCC', occupancy)
-    expect(moves.kingMovesActual(4, moves.getAttackBoard('B', board, true),pieces)).toBe(BigInt('0b101000'))
+    expect(moves.kingMovesActual(4, moves.getAttackBoard('B', board, true),pieces)).toEqual(BigInt('0b101000'))
 })
 
 test('attack board generation: white', () => {
@@ -81,10 +91,10 @@ test('attack board generation: white', () => {
     let occupancy = reduce(Array.from(board.values()), (x, y) => { return x | y }, 0n)
     board.set('OCC', occupancy)
     let attackBoard = moves.getAttackBoard('B', board, false)
-    expect(attackBoard).toBe(
+    expect(attackBoard).toEqual(
         BigInt("0b\
-01111110\
-00000000\
+11111111\
+10000001\
 11111111\
 00000000\
 00000000\
@@ -105,7 +115,6 @@ test('castling: black king side', () => {
     let BK = [BK1, 'BK']
     let board = util.newBoard(BK, BR)
     let occ = reduce( Array.from(board.values()),(x, y) => { return x | y }, 0n)
-
     let history = []
     expect(moves.canCastleKingSide(occ,history,'B')).toBe(true)
 
@@ -119,7 +128,6 @@ test('castling: white queen side', () => {
     let board = util.newBoard(WR,WK)
     let history = []
     let occ = reduce( Array.from(board.values()),(x, y) => { return x | y }, 0n)
-
     expect(moves.canCastleQueenSide(occ,history,'W')).toBe(true)
 })
 
@@ -131,7 +139,6 @@ test('castling: rook already moved', () => {
     let board = util.newBoard(WR,K)
     let history = [[0,1,'R','N']]
     let occ = reduce( Array.from(board.values()),(x, y) => { return x | y }, 0n)
-
     expect(moves.canCastleQueenSide(occ,history,'W')).toBe(false)
 })
 
@@ -144,7 +151,6 @@ test('castling: other rook already move, can still castle', () => {
     let board = util.newBoard(WR,K)
     let history = [[7,1,'R','N']]
     let occ = reduce(Array.from(board.values()),(x, y) => { return x | y }, 0n)
-
     expect(moves.canCastleQueenSide(occ,history,'W')).toBe(true)
     expect(moves.canCastleKingSide(occ,history,'W')).toBe(false)
 })
@@ -171,7 +177,6 @@ test('castling: piece in the way', () => {
     let board = util.newBoard(WR,K,B)
     let history = []
     let occ = reduce( Array.from(board.values()),(x, y) => { return x | y }, 0n)
-
     expect(moves.canCastleQueenSide(occ,history,'W')).toBe(false)
 })
 
@@ -201,13 +206,12 @@ test('pawn promotion: 1 forward', () => {
     let WP = [bsutil.set(0n, 58, 1), "WP"]
     let WQ = [bsutil.set(0n, 37, 1), "WQ"]
     let board = util.newBoard(WP, WQ);
-    let move = [50, 58, 'P', 'P']
+    let move = [50, 58, 'P', 'P','']
     let out  = game.makeMove(move, 'W',board)
     expect(util.count_1s(out.get('WP'))).toBe(0n)
     expect(util.count_1s(out.get('WQ'))).toBe(2n)
-    expect(out.get('WQ')).toBe(BigInt(Math.pow(2,58) + Math.pow(2,37)))
+    expect(out.get('WQ')).toEqual(BigInt(Math.pow(2,58) + Math.pow(2,37)))
 })
-
 
 test('kingmoveactual: move into check is not allowed', () => {
     let WQ = [bsutil.set(0n,8,1), 'WQ']
@@ -216,33 +220,30 @@ test('kingmoveactual: move into check is not allowed', () => {
     let board = util.newBoard(WQ,BK,WP)
     let colour = 'W'
     let pieces = board.get(colour + 'P') | board.get(colour + 'N') | board.get(colour + 'B') | board.get(colour + 'R') | board.get(colour + 'Q') | board.get(colour + 'K')
-
     let attack = moves.getAttackBoard('W', board, true)
-    expect(moves.kingMovesActual(4,attack,pieces)).toBe(BigInt('0b00001000'))
+    expect(moves.kingMovesActual(4,attack,pieces)).toEqual(BigInt('0b00001000'))
 })
 
 
-// get when try to run? TypeError: Do not know how to serialize a BigInt
-// test('getAttackMoves: return attack board of all pieces', () => {
-//     let WN = [bsutil.set(0n,28,1), 'WN']
-//     let WR = [bsutil.set(0n,7,1), 'WR']
-//     let BP = [bsutil.set(0n,55,1), 'BP']
-//     let board = util.newBoard(WN,WR,BP)
-//     let attack = moves.getAttackBoard('W', board, true)
-//     expect(attack).toBe(BigInt('0b\
-// 00000000\
-// 10000000\
-// 11001000\
-// 10000100\
-// 10000000\
-// 10000100\
-// 11001000\
-// 01111110'
-// ))
-// })
+test('getAttackMoves: return attack board of all pieces', () => {
+    let WN = [bsutil.set(0n,28,1), 'WN']
+    let WR = [bsutil.set(0n,7,1), 'WR']
+    let BP = [bsutil.set(0n,55,1), 'BP']
+    let board = util.newBoard(WN,WR,BP)
+    let attack = moves.getAttackBoard('W', board, true)
+    expect(attack).toEqual(BigInt('0b\
+10000000\
+10101000\
+11000100\
+10000000\
+11000100\
+10101000\
+01111111'
+))
+})
 
 test('kingMoves', () => {
-    expect(moves.kingMoves(28)).toBe(BigInt('0b\
+    expect(moves.kingMoves(28)).toEqual(BigInt('0b\
 00000000\
 00000000\
 00000000\
@@ -254,7 +255,7 @@ test('kingMoves', () => {
 })
 
 test('knightMoves', () => {
- expect(moves.knightMoves(28)).toBe(BigInt('0b\
+ expect(moves.knightMoves(28)).toEqual(BigInt('0b\
 00000000\
 00000000\
 00101000\

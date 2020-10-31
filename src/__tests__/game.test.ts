@@ -1,6 +1,7 @@
 import * as game from '../game'
-import * as utils from '../utils'
+import * as player from '../player'
 import * as bsutil from '../bitSetUtils'
+import * as utils from '../util'
 test('sameMoveCheck: same move five times in a row', () => {
     let states = [18446462598733168637n, 18445341096872837117n, 18445341105462509565n,
         17868882552182341629n, 17868882552316557309n, 17868602176851474429n,
@@ -17,13 +18,13 @@ test('sameMoveCheck: same move five times in a row', () => {
          6262963439691360320n,  6267467039318665280n,  6267467039318663744n,
          6262963456871162432n,  6262963456879534656n,  6118849368315306560n]
          //here 8568806448636491912n is done 5 times
-    expect(game.sameMoveCheck(states)).toBe(true)
+    expect(game.sameBoardStateFiveTimes(states)).toBe(true)
 })
 
 test('sameMoveCheck: not same move five times', () => {
 let states =   [18446462598733168637n, 18445341096872837117n, 18445341105462509565n,
 17868882552182341629n, 17868882552316557309n, 17868602176851474429n]
- expect(game.sameMoveCheck(states)).toBe(false)
+ expect(game.sameBoardStateFiveTimes(states)).toBe(false)
 })
 
 test('fifty move: contains a pawn move', () => {
@@ -96,9 +97,9 @@ test('fifty move: contains a capture', () => {
 
 
 test('parseInputMove', () => {
-    expect(game.parseInputSquare('e4')).toBe(28)
-    expect(game.parseInputSquare('h8')).toBe(63)
-    expect(game.parseInputSquare('a1')).toBe(0)
-    expect(game.parseInputSquare('e7')).toBe(52)
-    expect(game.parseInputSquare('e6')).toBe(44)
+    expect(player.parseInputSquare('e4')).toBe(28)
+    expect(player.parseInputSquare('h8')).toBe(63)
+    expect(player.parseInputSquare('a1')).toBe(0)
+    expect(player.parseInputSquare('e7')).toBe(52)
+    expect(player.parseInputSquare('e6')).toBe(44)
 })

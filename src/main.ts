@@ -1,10 +1,11 @@
-import * as utils from './utils'
+import * as util from './util'
 import * as bsutil from './bitSetUtils'
 import * as game from './game'
 import * as constants from './constants'
 import * as moves from './moves'
 import * as check from './check'
 import {reduce} from 'lodash'
+import { get } from 'http'
 let BP1 = bsutil.setRange(0n, 48, 55, 1);
 let BR1 = bsutil.set(0n, 0 + 56, 1)
 BR1 = bsutil.set(BR1, 7 + 56, 1)
@@ -38,6 +39,6 @@ let WB = [WB1, 'WB']
 let WQ = [WQ1, 'WQ']
 let WK = [WK1, 'WK']
 
-let board = utils.newBoard(WP, WR, WN, WB, WQ, WK, BP, BR, BN, BB, BQ, BK)
-let opponent = 'HUM'
+let board = util.newBoard(WP, WR, WN, WB, WQ, WK, BP, BR, BN, BB, BQ, BK)
+let opponent = 'HMAN'
 game.play(board, [], opponent)

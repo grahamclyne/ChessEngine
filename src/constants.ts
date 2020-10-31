@@ -1,4 +1,4 @@
-import * as util from './utils'
+import * as util from './util'
 
 export const rankMasks: bigint[] = util.setRankMasks();
 export const fileMasks: bigint[] = util.setFileMasks();
