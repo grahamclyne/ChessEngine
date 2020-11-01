@@ -21,3 +21,29 @@ capture logic test
 6 -- WQ -- -- -- -- -- WP
 7 -- WP -- -- -- -- WP --
 8 -- BK -- -- -- -- -- --
+
+
+
+
+  A  B  C  D  E  F  G  H
+1 -- -- -- -- -- -- -- WK
+2 -- -- -- -- -- -- -- --
+3 -- -- -- BP -- -- -- --
+4 -- -- -- -- -- -- -- --
+5 -- -- -- -- -- -- BQ WP
+6 -- -- -- BQ BK -- -- BP
+7 -- -- -- -- -- -- -- --
+8 -- -- -- BN -- -- -- --
+2020-10-31 17:34:51.104.000      INFO   [myLogger src\game.ts:90 takeTurn]              W TURN:
+2020-10-31 17:34:51.106.000      INFO   [myLogger src\game.ts:95 takeTurn]              Move chosen: undefined
+(node:14788) UnhandledPromiseRejectionWarning: TypeError: Cannot read property '3' of undefined
+    at makeMove (C:\Users\Graham Clyne\Documents\chessEngine\dist\game.js:31:13)
+    at takeTurn (C:\Users\Graham Clyne\Documents\chessEngine\dist\game.js:108:20)
+    at Object.play (C:\Users\Graham Clyne\Documents\chessEngine\dist\game.js:66:17)
+    at Object.<anonymous> (C:\Users\Graham Clyne\Documents\chessEngine\dist\main.js:38:6)
+    at Module._compile (internal/modules/cjs/loader.js:1015:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1035:10)
+    at Module.load (internal/modules/cjs/loader.js:879:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:724:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:60:12)
+    at internal/main/run_main_module.js:17:47

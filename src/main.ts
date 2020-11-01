@@ -4,8 +4,9 @@ import * as game from './game'
 import * as constants from './constants'
 import * as moves from './moves'
 import * as check from './check'
-import {reduce} from 'lodash'
-import { get } from 'http'
+import * as tree from './tree'
+import { memoryUsage } from 'process'
+import * as search from './search'
 let BP1 = bsutil.setRange(0n, 48, 55, 1);
 let BR1 = bsutil.set(0n, 0 + 56, 1)
 BR1 = bsutil.set(BR1, 7 + 56, 1)
@@ -40,5 +41,22 @@ let WQ = [WQ1, 'WQ']
 let WK = [WK1, 'WK']
 
 let board = util.newBoard(WP, WR, WN, WB, WQ, WK, BP, BR, BN, BB, BQ, BK)
-let opponent = 'HMAN'
-game.play(board, [], opponent)
+let opponent = 'HUMAN'
+//game.play(board, [], opponent)
+
+// let used = memoryUsage()
+// for (let key in used) {
+//   console.log(`${key} ${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`);
+// }
+// let child5 = {board:0n, move:[], weight:5,children:[]}
+// let child4 = {board:0n, move:[], weight:4,children:[child5]}
+// let child3 = {board:0n, move:[], weight:3,children:[]}
+// let child2 = {board:0n, move:[], weight:2,children:[]}
+// let child1= {board:0n, move:[], weight:1,children:[]}
+
+// let treeN = {board:0n, move:[], weight:0,children:[child1,child2,child3,child4]}
+// //tree.bfs(treeN)
+// tree.dfs(treeN)
+
+let filled = search.startMiniMax('W',[],board)
+search.showAllChildren(filled)

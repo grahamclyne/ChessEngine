@@ -44,12 +44,17 @@ export function prettyPrintBoard(board) {
 	let ranks = ['  A  ', 'B  ', 'C  ', 'D  ', 'E  ', 'F  ', 'G  ', 'H  \n']
 	finBoard.fill("-- ")
 	let fileCount = 0;
-	board.forEach((value,key) => {
+	board.forEach((value, key) => {
 		let bitSet = BigInt.asUintN(64, BigInt(value))
 		let black = bitSet.toString(2).split("").reverse()
 		black.map((el, index) => {
 			if (el == '1') {
-				finBoard[index] = key + " "
+				if (key[0] == 'W') {
+					finBoard[index] = '\x1b[93m' + key + '\x1b[39m '
+				}
+				else {
+					finBoard[index] = '\x1b[91m' + key + '\x1b[39m '
+				}
 			}
 		})
 
@@ -63,7 +68,7 @@ export function prettyPrintBoard(board) {
 
 
 		if ((index + 1) % 8 == 0 && index != 0) {
-			process.stdout.write('\x1b[93m' + el + "\x1b[39m\n")
+			process.stdout.write(el + "\n")
 		}
 		else {
 			process.stdout.write(el)
@@ -179,13 +184,13 @@ export function pieceCount(board: Map<string, bigint>): bigint {
 	let count = reduce(Array.from(board.values()), (x, y) => (x + count_1s(y)), 0n)
 	return count
 }
-export function count_1s(b: bigint): bigint {
-	let r = 0n;
-	for (r = 0n; b; r++, b &= b - 1n);
+export function count_1s(b: bigint): number {
+	let r = 0;
+	for (r = 0; b; r++, b &= b - 1n);
 	return r;
 }
 
-export function pow(b: bigint, exponent:number): bigint {
+export function pow(b: bigint, exponent: number): bigint {
 	let output = 1n
 	while (exponent > 0) {
 		output = b * output

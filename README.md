@@ -29,3 +29,5 @@ javascript/typescript - Objects and arrays are passed by reference. Primitive va
 
 global variable CHECK_FLAG in game.ts a good idea?
 how can history and board state be coupled that neither can be out of sync?
+
+two weeks until bug free random move games being played

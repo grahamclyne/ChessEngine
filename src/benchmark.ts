@@ -1,7 +1,7 @@
 import * as Benchmark from 'benchmark'
 import * as bsutil from './bitSetUtils'
 import * as util from './util'
-
+import * as game from './game'
 
 var suite = new Benchmark.Suite;
 var board = util.newBoard();
@@ -16,7 +16,7 @@ suite.add('RegExp#test', function() {
     bsutil.lsb(15n)
 })
 .add('pickMove',function() {
- // game.pickMove('W',[],board,false)
+ game.findMoves('W',[],board)
 })
 // add listeners
 .on('cycle', function(event) {

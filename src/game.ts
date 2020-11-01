@@ -29,7 +29,6 @@ export function findMoves(colour: string, history, board: Map<string, bigint>) {
 }
 
 export function makeMove(move, colour: string, board: Map<string, bigint>) {
-    console.log('move in makemove', move)
     let oppColour = (colour == 'W') ? 'B' : 'W'
     let out = util.deepCloneMap(board)
     if (move[3] == 'EN') { //en passant logic
@@ -148,7 +147,7 @@ export function checkEndGameConditions(board:Map<string,bigint>,states:Array<big
 
 export function checkForMate(colour: string, board: Map<string, bigint>,history) {
     if (check.isCheck(colour, board)) {
-        log.info(colour + " put other player into Check")
+        log.info(colour + " is in Check")
         CHECK_FLAG = true
     }
     return check.isCheckMate(colour, board,history)
@@ -191,7 +190,7 @@ export function hasEnoughMaterial(board:Map<string,bigint>,colour:string){
     if(board.get(colour + 'N') >0n && board.get(colour + 'B') > 0n){
         return true
     }
-    if(util.count_1s(board.get(colour + 'B')) == 2n){
+    if(util.count_1s(board.get(colour + 'B')) == 2){
         return true 
     }
     if(board.get(colour + 'R') > 0n){

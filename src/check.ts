@@ -11,13 +11,10 @@ export function isCheck(colour,board){//should this take a specific board and th
 
 export function isCheckMate(colour,board,history){
     let check = isCheck(colour,board)
-    if(!check){
-        return false
-    }
     let legalMoves = game.findMoves(colour, history, board)
-    let rand = Math.floor(Math.random() * legalMoves.length)
-    let move = legalMoves[rand]
     while (check && legalMoves.length > 0) {
+        let rand = Math.floor(Math.random() * legalMoves.length)
+        let move = legalMoves[rand]
         let boardState = game.makeMove(move, colour, board)
         if (!isCheck(colour, boardState)) {
             check = false
@@ -25,8 +22,6 @@ export function isCheckMate(colour,board,history){
         else { //remove move from list
             legalMoves = legalMoves.filter((x) => { if (!utils.arrayEquals(x, move)) return x })
         }
-        let rand = Math.floor(Math.random() * legalMoves.length)
-        move = legalMoves[rand]
     }
     if(legalMoves.length == 0 && check == true){
         return 1

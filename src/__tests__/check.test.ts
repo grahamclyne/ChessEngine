@@ -85,3 +85,12 @@ test('white is in check but a piece can intervene', () => {
     expect(check.isCheckMate('W',board,[])).toBe(0)
     expect(check.isCheck('W',board)).toBe(true)
 })
+
+test('stalemate', () => {
+    let WP = [bsutil.set(0n,49,1),'WP']
+    let WQ = [bsutil.set(0n,41,1), 'WQ']
+    let BK = [bsutil.set(0n, 57, 1), "BK"]
+    let board = utils.newBoard(BK,WQ,WP); 
+    expect(check.isCheckMate('B',board,[])).toBe(2)
+    expect(check.isCheck('B',board)).toBe(false)   
+})
