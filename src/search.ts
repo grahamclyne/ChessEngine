@@ -62,11 +62,30 @@ export function buildSearchSpace(colour,history,board,depth,node, enddepth){
 //     return max;
 // 
 
-export function miniMax(depth,max,space){
-    if(depth == 0){
-        return 
+//need post order traversal
+export function minimax(position,depth,maximizing){
+    if(depth == 0 /*|| game over?*/){
+        return position.weight
     }
+    if(maximizing){
+        let maxEval = -Infinity
+        position.children.forEach(child => {
+            let w = minimax(child, depth -1, false)
+            maxEval = Math.max(w, maxEval)
 
+        })
+        position.weight = maxEval
+        return maxEval
+    }
+    else{
+        let minEval = Infinity
+        position.children.forEach(child => {
+            let w = minimax(child, depth - 1, true)
+            minEval = Math.min(w, minEval)
+        })
+        position.weight = minEval
+        return minEval
+    }
 }
 
 

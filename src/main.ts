@@ -56,18 +56,37 @@ magic.init_sliders_attacks(false)
 log.info("Done!")
 game.play(board, [], opponent)
 
-
-// let child5 = {board:0n, move:[], weight:5,children:[]}
-// let child4 = {board:0n, move:[], weight:4,children:[child5]}
-// let child3 = {board:0n, move:[], weight:3,children:[]}
-// let child2 = {board:0n, move:[], weight:2,children:[]}
-// let child1= {board:0n, move:[], weight:1,children:[]}
-
-// let treeN = {board:0n, move:[], weight:0,children:[child1,child2,child3,child4]}
+// board = util.newBoard()
+// let level4_1 = {board:board, move:[], weight:10,children:[]}
+// let level4_2 = {board:board, move:[], weight:7,children:[]}
+// let level4_3 = {board:board, move:[], weight:8,children:[]}
+// let level4_4 = {board:board, move:[], weight:6,children:[]}
+// let level4_5 = {board:board, move:[], weight:5,children:[]}
+// let level4_6 = {board:board, move:[], weight:-11,children:[]}
+// let level4_7 = {board:board, move:[], weight:40,children:[]}
+// let level4_8 = {board:board, move:[], weight:12,children:[]}
+// let level3_1= {board:board, move:[], weight:5,children:[level4_1,level4_2]}
+// let level3_2= {board:board, move:[], weight:4,children:[level4_3,level4_4]}
+// let level3_3= {board:board, move:[], weight:5,children:[level4_5,level4_6]}
+// let level3_4= {board:board, move:[], weight:4,children:[level4_7,level4_8]}
+// let level2_1= {board:board, move:['zz'], weight:3,children:[level3_1,level3_2]}
+// let level2_2= {board:board, move:['yy'], weight:2,children:[level3_3,level3_4]}
+// let level1_1= {board:board, move:['xx'], weight:1,children:[level2_1,level2_2]}
+// //7
+// //7       5
+// //7   8   5     40 
+// //1 7 8 6 5 -11 40 12
 // //tree.bfs(treeN)
-// tree.dfs(treeN)
-
-
+// let move = search.minimax(level1_1,3,true)
+// console.log(move)
+// let finMove = []
+// level1_1.children.forEach(child => {
+//     if (child.weight == move){
+//         finMove = child.move
+//     }
+// })
+// console.log(finMove)
+// search.showAllChildren(level1_1,0)
 
 
 // var hrstart = process.hrtime()

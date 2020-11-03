@@ -5,6 +5,7 @@ import * as bsutil from './bitSetUtils'
 import * as check from './check'
 import { reduce, filter } from 'lodash'
 import * as player from './player'
+import * as search from './search'
 
 var CHECK_FLAG = false
 
@@ -18,6 +19,7 @@ const log: Logger = new Logger({ name: "myLogger" });
 
 export function findMoves(colour: string, history, board: Map<string, bigint>) {
     let occupancy = reduce(Array.from(board.values()), (x, y) => { return x | y }, 0n)
+
     let legalMoves = moves.getMoves(board, colour, history)
     if (moves.canCastleKingSide(occupancy, history, colour)) {
         legalMoves.push(['CASTLE-KING'])
@@ -90,8 +92,16 @@ export function takeTurn(board, history, colour, states) {
     log.info(colour + ' TURN:')
     let legalMoves = findMoves(colour, history, board)
     //remove all moves that put into check position
-    let rand = Math.floor(Math.random() * legalMoves.length)
-    let move = legalMoves[rand]
+    let filled = search.startMiniMax(colour,history,board)
+    let moveWeight = search.minimax(filled,3,true)
+    let move = []
+    filled.children.forEach(child => {
+        if (child.weight == moveWeight){
+            move = child.move
+        }
+    })
+   // let rand = Math.floor(Math.random() * legalMoves.length)
+   // let move = legalMoves[rand]
     log.info("Move chosen:",move)
     while (CHECK_FLAG) {
         let boardState = makeMove(move, colour, board)

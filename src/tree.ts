@@ -28,12 +28,32 @@ export function bfs(tree:TreeNode) {
     })
 }
 
-export function dfs(tree:TreeNode){
+export function dfs(tree:TreeNode,max){
+
+    //if leaf node
+    if(tree.children.length == 0){
+        return tree.weight
+    }
+    tree.children.forEach(child => {
+        
+        let mmax = dfs(child,max)
+        if(mmax > max){
+            max = mmax
+        }
+    })
+    if(max > tree.weight){
+        return max
+    }
+    return tree.weight
+
+}
+
+export function post(tree:TreeNode){
     if(tree.children.length == 0){
         return
     }
     tree.children.forEach(child => {
-        dfs(child)
+        post(child)
         console.log(child.weight)
     })
 }
@@ -47,3 +67,4 @@ export function print(tree:TreeNode){
     process.stdout.write('board:' + occupancy + ' score:' + tree.weight + ' children: ' +  tree.children.length)
 
 }
+
