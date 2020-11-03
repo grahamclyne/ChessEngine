@@ -1,5 +1,7 @@
+import {reduce} from 'lodash'
+
 export interface TreeNode {
-    board:bigint
+    board:Map<string,bigint>
     move:any
     weight:number
     children?: TreeNode[] 
@@ -37,5 +39,11 @@ export function dfs(tree:TreeNode){
 }
 
 export function checkForCycles(tree:TreeNode){
+
+}
+
+export function print(tree:TreeNode){
+    let occupancy = reduce(Array.from(tree.board.values()), (x, y) => { return x | y }, 0n)
+    process.stdout.write('board:' + occupancy + ' score:' + tree.weight + ' children: ' +  tree.children.length)
 
 }

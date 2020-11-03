@@ -32,11 +32,4 @@ export function isCheckMate(colour,board,history){
     else{
         return 0
     }
-    // let pieces = board.get(colour + 'P') | board.get(colour + 'N') | board.get(colour + 'B') | board.get(colour + 'R') | board.get(colour + 'Q') | board.get(colour + 'K')
-    // let oppColour = (colour == 'W') ? 'B' : 'W'
-    // let attack = mp.getAttackBoard(oppColour,board,true)
-    // let king = board.get(colour + 'K')
-    // let kingMoves = mp.kingMovesActual(bsutil.lsb(king),attack,pieces)
-    // //have to check all moves to see if one
-    // return (kingMoves == 0n) ? true : false
 }

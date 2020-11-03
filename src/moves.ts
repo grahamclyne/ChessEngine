@@ -5,6 +5,8 @@ import * as magic from "./magic"
 import * as game from './game'
 import * as check from './check'
 import { reduce } from "lodash"
+
+
 export function getPawnMoves(board, colour, history) {
 
     let possibleMoves = []
@@ -123,19 +125,24 @@ export function pawnAttacks(pawnBoard, colour) {
 export function rookMoves(occ, sq) {
     //could use whole occupancy board,but would map to too many possibilties, following line gives us a reduced occupancy that is much more manageable
     //use same magic number while instantiating rook_moves array as for rook_magic_numbers
-    // let occ1 = occ
-    // occ &= magic.rMask(sq);
-    // occ *= magic.rook_magic_numbers[sq];
-    // //  occ *= magic.findMagic(sq,utils.nRBits[sq],0)
-    // occ >>= (64n - BigInt(magic.nRBits[Number(sq)]))
-    return magic.rookAttacksOnTheFly(occ, sq)
+     let occ1 = occ
+    occ &= magic.rMask(sq);
+    occ *= magic.rook_magic_numbers[sq];
+    occ >>= (64n - BigInt(magic.nRBits[Number(sq)]))
+    return BigInt(magic.rook_attacks[sq][Number(occ)])
+    //return magic.rookAttacksOnTheFly(occ1, sq)
 }
 
 export function bishopMoves(occ, sq) {
-    //  occ &= magic.rMask(sq);
-    //  occ *= utils.magicR[sq];
-    //  occ >>= (64n - BigInt(magic.nRBits[sq]))
-    return magic.bishopAttacksOnTheFly(occ, sq)
+  //  console.log(occ,sq)
+     occ &= magic.bMask(sq);
+     occ *= magic.bishop_magic_numbers[sq];
+     occ >>= (64n - BigInt(magic.nBBits[Number(sq)]))
+ //    console.log(occ, Number(occ))
+    let out = magic.bishop_attacks[sq][Number(occ)]
+    // console.log(magic.bishop_attacks[sq])
+    // console.log(out)
+    return BigInt(out)
 }
 
 export function knightMoves(sq) {

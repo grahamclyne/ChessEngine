@@ -5,7 +5,7 @@
 import { count_1s } from "./util"
 import * as tree from "./tree"
 import * as game from './game'
-import * as reduce from 'lodash'
+import { reduce} from 'lodash'
 export function staticEvaluation(colour, board,mobility) {
     let oppColour = (colour == 'W') ? 'B' : 'W'
     let score = count_1s(board.get(colour + 'P')) - count_1s(board.get(oppColour + 'P'))
@@ -17,22 +17,15 @@ export function staticEvaluation(colour, board,mobility) {
 
     return score
 }
-// int negaMax( int depth ) {
-//     if ( depth == 0 ) return evaluate();
-//     int max = -oo;
-//     for ( all moves)  {
-//         score = -negaMax( depth - 1 );
-//         if( score > max )
-//             max = score;
-//     }
-//     return max;
-// 
+
 export function startMiniMax(colour,history,board){
+
     let root:tree.TreeNode = {board:board,weight:0, move:null,children:[]}
-    let filled = minimax(colour,history,board,0,root,1)
+    let filled = buildSearchSpace(colour,history,board,0,root,6)
+  //  let move = miniMax()
     return filled
 }
-export function minimax(colour,history,board,depth,node, enddepth){
+export function buildSearchSpace(colour,history,board,depth,node, enddepth){
     let oppColour = (colour == 'W') ? 'B' : 'W'
     if(depth == enddepth){
         return node
@@ -40,15 +33,12 @@ export function minimax(colour,history,board,depth,node, enddepth){
     let moves = game.findMoves(colour,history,board)
     moves.forEach(move => {
         let tempBoard = game.makeMove(move,colour,board)
-        let occupancy = reduce(Array.from(tempBoard.values()), (x, y) => { return x | y }, 0n)
-
-        let score = staticEvaluation(colour,occupancy, moves.length)
-        let child:tree.TreeNode = {board:occupancy, weight:score,move:move, children:[]}
-        child = minimax(oppColour,history,tempBoard,depth + 1, child,enddepth)
+        let score = staticEvaluation(colour,tempBoard, moves.length)
+        let child:tree.TreeNode = {board:tempBoard, weight:score,move:move, children:[]}
+        child = buildSearchSpace(oppColour,history,tempBoard,depth + 2, child,enddepth)
         node.children.push(child)
     })
     return node
-    
 }
 // f(p) = 200(K-K')
 //        + 9(Q-Q')
@@ -59,14 +49,39 @@ export function minimax(colour,history,board,depth,node, enddepth){
 //        + 0.1(M-M') + ...
 
 
-//i want to start by doing a very naive minimax, no move ordering or alpha beta 
 
-export function showAllChildren(node : tree.TreeNode){
-    if(node.children.length == 0){
+
+// int negaMax( int depth ) {
+//     if ( depth == 0 ) return evaluate();
+//     int max = -oo;
+//     for ( all moves)  {
+//         score = -negaMax( depth - 1 );
+//         if( score > max )
+//             max = score;
+//     }
+//     return max;
+// 
+
+export function miniMax(depth,max,space){
+    if(depth == 0){
         return 
     }
+
+}
+
+
+export function showAllChildren(node : tree.TreeNode,tabs){
+    let toPrint = ''
+    let count = 0
+    while(count < tabs){
+        toPrint = '\t' + toPrint
+        count++
+    }
+    process.stdout.write(toPrint)
+    tree.print(node)
+    process.stdout.write('\n')
+
     node.children.forEach(child => {
-        console.log(node)
-        showAllChildren(child)
+        showAllChildren(child,tabs+1)
     })
 }

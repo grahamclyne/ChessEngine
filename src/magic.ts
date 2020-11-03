@@ -1,13 +1,9 @@
-import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from "constants";
+import * as util from './util'
 import * as bsutil from './bitSetUtils'
-export function count_1s(b) {
-    let r = 0n;
-    for(r = 0n; b; r++, b &= b - 1n);
-    return r;
-  }
+
 export function bishopAttacksOnTheFly(occ, sq) {
     let attacks = 0n;
-    let pieceRank = sq / 8n, pieceFile = sq % 8n, rank, file;
+    let pieceRank = BigInt(sq) / 8n, pieceFile = BigInt(sq) % 8n, rank, file;
     for (rank = pieceRank + 1n, file = pieceFile + 1n; rank <= 7n && file <= 7n; rank++, file++) {
         let pos = (1n << (rank * 8n + file))
         attacks |= (pos);
@@ -33,7 +29,7 @@ export function bishopAttacksOnTheFly(occ, sq) {
 
 export function rookAttacksOnTheFly(occ, sq) {
     let attacks = 0n;
-    let pieceRank = sq / 8n, pieceFile = sq % 8n, rank, file;
+    let pieceRank = BigInt(sq) / 8n, pieceFile = BigInt(sq) % 8n, rank, file;
     //rank to the right 
 
     for (rank = pieceRank + 1n; rank <= 7n; rank++) {
@@ -85,9 +81,10 @@ export const nBBits = [
 	6, 5, 5, 5, 5, 5, 5, 6,
 ]
 
-export function rMask(sq: bigint) {
+export function rMask(sq: number) {
+
     let result = 0n;
-    let rk = sq / 8n, fl = sq % 8n, r, f;
+    let rk = BigInt(sq) / 8n, fl = BigInt(sq) % 8n, r, f;
     for (r = rk + 1n; r <= 6n; r++) result |= (1n << (fl + r * 8n));
     for (r = rk - 1n; r >= 1n; r--) result |= (1n << (fl + r * 8n));
     for (f = fl + 1n; f <= 6n; f++) result |= (1n << (f + rk * 8n));
@@ -95,148 +92,17 @@ export function rMask(sq: bigint) {
     return result;
 }
 
-
-export function bMask(sq: bigint) {
+export function bMask(sq: number) {
     let result = 0n;
-    let rk = sq / 8n, fl = sq % 8n, r, f;
-    for (r = rk + 1n, f = fl + 1n; r <= 6n && f <= 6n; r++, f++) result |= (1n << (f + r * 8n));
-    for (r = rk + 1n, f = fl - 1n; r <= 6n && f >= 1n; r++, f--) result |= (1n << (f + r * 8n));
-    for (r = rk - 1n, f = fl + 1n; r >= 1n && f <= 6n; r--, f++) result |= (1n << (f + r * 8n));
-    for (r = rk - 1n, f = fl - 1n; r >= 1n && f >= 1n; r--, f--) result |= (1n << (f + r * 8n));
+    let rk = BigInt(sq) / 8n, fl = BigInt(sq) % 8n, r, f;
+    for (r = rk + 1n, f = fl + 1n; r <= 6 && f <= 6; r++, f++) result |= (1n << (f + r * 8n));
+    for (r = rk + 1n, f = fl - 1n; r <= 6 && f >= 1; r++, f--) result |= (1n << (f + r * 8n));
+    for (r = rk - 1n, f = fl + 1n; r >= 1 && f <= 6; r--, f++) result |= (1n << (f + r * 8n));
+    for (r = rk - 1n, f = fl - 1n; r >= 1 && f >= 1; r--, f--) result |= (1n << (f + r * 8n));
     return result;
 }
 //https://www.chessprogramming.org/Looking_for_Magics
 
-
-
-// // set occupancies
-// export function set_occupancy(index, bits_in_mask,attack_mask)
-// {
-//     // occupancy map
-//     let occupancy = 0n;
-    
-//     // loop over the range of bits within attack mask
-//     for (let count = 0; count < bits_in_mask; count++)
-//     {
-//         // get LS1B index of attacks mask
-//         int square = get_ls1b_index(attack_mask);
-        
-//         // pop LS1B in attack map
-//         pop_bit(attack_mask, square);
-        
-//         // make sure occupancy is on board
-//         if (index & (1 << count))
-//             // populate occupancy map
-//             occupancy |= (1n << square);
-//     }
-    
-//     // return occupancy map
-//     return occupancy;
-// }
-
-export function random_uint64() {
-    var u1, u2, u3, u4;
-    u1 = (Math.random()) & 0xFFFF; u2 = (Math.random()) & 0xFFFF;
-    u3 = (Math.random()) & 0xFFFF; u4 = (Math.random()) & 0xFFFF;
-    return BigInt(u1 | (u2 << 16) | (u3 << 32) | (u4 << 48));
-  }
-  
-  export function random_uint64_fewbits() {
-    return random_uint64() & random_uint64() & random_uint64();
-  }
-
-export function find_magic(square, relevant_bits, bishop) {
-    
-    // init occupancies
-    let occupancies= [];
-    
-    // init attack tables
-    let attacks = [];
-    
-    // init used attacks
-    let used_attacks = [];
-    
-    // init attack mask for a current piece
-    let attack_mask = bishop ? bMask(square) : rMask(square);
-    
-    // init occupancy indicies
-    let occupancy_indicies = 1 << relevant_bits;
-    
-    // loop over occupancy indicies
-    for (let index = 0; index < occupancy_indicies; index++)
-    {
-        // init occupancies
-    //    occupancies[index] = set_occupancy(index, relevant_bits, attack_mask);
-        
-        // init attacks
-        attacks[index] = bishop ? bishopAttacksOnTheFly(square, occupancies[index]) :
-                                    rookAttacksOnTheFly(square, occupancies[index]);
-    }
-    
-    // test magic numbers loop
-    for (var random_count = 0; random_count < 100000000; random_count++)
-    {
-        // generate magic number candidate
-        let magic_number = random_uint64_fewbits();
-        
-        // skip inappropriate magic numbers
-        if (count_1s((attack_mask * magic_number) & 0xFF00000000000000n) < 6) continue;
-        
-        
-        // init index & fail flag
-        var index, fail;
-        
-        // test magic index loop
-        for (index = 0, fail = 0; !fail && index < occupancy_indicies; index++)
-        {
-            // init magic index
-            let magic_index = ((occupancies[index] * magic_number) >> (64n - relevant_bits));
-            
-            // if magic index works
-            if (used_attacks[Number(magic_index)] == 0n)
-                // init used attacks
-                used_attacks[Number(magic_index)] = attacks[index];
-            
-            // otherwise
-            else if (used_attacks[Number(magic_index)] != attacks[index])
-                // magic index doesn't work
-                fail = 1;
-        }
-        
-        // if magic number works
-        if (!fail)
-            // return it
-            return magic_number;
-    }
-    
-    // if magic number doesn't work
-    console.log("  Magic number fails!\n");
-    return 0n;
-}
-//     uint64 mask, b[4096], a[4096], used[4096], magic;
-//     int i, j, k, n, fail;
-  
-//     mask = bishop? bmask(sq) : rmask(sq);
-//     n = count_1s(mask);
-  
-//     for(i = 0; i < (1 << n); i++) {
-//       b[i] = index_to_uint64(i, n, mask);
-//       a[i] = bishop? batt(sq, b[i]) : ratt(sq, b[i]);
-//     }
-//     for(k = 0; k < 100000000; k++) {
-//       magic = random_uint64_fewbits();
-//       if(count_1s((mask * magic) & 0xFF00000000000000n) < 6) continue;
-//       for(i = 0; i < 4096; i++) used[i] = 0n;
-//       for(i = 0, fail = 0; !fail && i < (1 << n); i++) {
-//         j = transform(b[i], magic, m);
-//         if(used[j] == 0n) used[j] = a[i];
-//         else if(used[j] != a[i]) fail = 1;
-//       }
-//       if(!fail) return magic;
-//     }
-//     printf("***Failed***\n");
-//     return 0n;
-//   }
 export const  rook_magic_numbers = [
     0x8a80104000800020n,
     0x140002000100040n,
@@ -303,3 +169,126 @@ export const  rook_magic_numbers = [
     0x2006104900a0804n,
     0x1004081002402n
 ];
+
+export const bishop_magic_numbers = [
+    0x40040844404084n,
+    0x2004208a004208n,
+    0x10190041080202n,
+    0x108060845042010n,
+    0x581104180800210n,
+    0x2112080446200010n,
+    0x1080820820060210n,
+    0x3c0808410220200n,
+    0x4050404440404n,
+    0x21001420088n,
+    0x24d0080801082102n,
+    0x1020a0a020400n,
+    0x40308200402n,
+    0x4011002100800n,
+    0x401484104104005n,
+    0x801010402020200n,
+    0x400210c3880100n,
+    0x404022024108200n,
+    0x810018200204102n,
+    0x4002801a02003n,
+    0x85040820080400n,
+    0x810102c808880400n,
+    0xe900410884800n,
+    0x8002020480840102n,
+    0x220200865090201n,
+    0x2010100a02021202n,
+    0x152048408022401n,
+    0x20080002081110n,
+    0x4001001021004000n,
+    0x800040400a011002n,
+    0xe4004081011002n,
+    0x1c004001012080n,
+    0x8004200962a00220n,
+    0x8422100208500202n,
+    0x2000402200300c08n,
+    0x8646020080080080n,
+    0x80020a0200100808n,
+    0x2010004880111000n,
+    0x623000a080011400n,
+    0x42008c0340209202n,
+    0x209188240001000n,
+    0x400408a884001800n,
+    0x110400a6080400n,
+    0x1840060a44020800n,
+    0x90080104000041n,
+    0x201011000808101n,
+    0x1a2208080504f080n,
+    0x8012020600211212n,
+    0x500861011240000n,
+    0x180806108200800n,
+    0x4000020e01040044n,
+    0x300000261044000an,
+    0x802241102020002n,
+    0x20906061210001n,
+    0x5a84841004010310n,
+    0x4010801011c04n,
+    0xa010109502200n,
+    0x4a02012000n,
+    0x500201010098b028n,
+    0x8040002811040900n,
+    0x28000010020204n,
+    0x6000020202d0240n,
+    0x8918844842082200n,
+    0x4010011029020020n
+];
+
+export function pop_bit(bitboard,square){
+    return (bitboard &= bsutil.not(1n << BigInt(square)))
+}
+
+export function set_occupancy(index, bits_in_mask, attack_mask)
+{
+    let occupancy = 0n;
+    // loop over the range of bits within attack mask
+    for (let count = 0; count < bits_in_mask; count++)
+    {
+        let square = bsutil.lsb(attack_mask);
+        attack_mask = pop_bit(attack_mask, square);
+        
+        // make sure occupancy is on board
+        if (index & (1 << count))
+            occupancy |= (1n << BigInt(square));
+    }
+    return occupancy;
+}
+
+
+export var bishop_attacks = []
+export var rook_attacks = []
+
+for(let i = 0; i < 64; i++){
+    bishop_attacks[i] = new Array(4096n)
+}
+for(let i = 0; i < 64; i++){
+    rook_attacks[i] = new Array(4096n)
+}
+export function init_sliders_attacks(bishop)
+{
+    for (let square = 0; square < 64; square++)
+    {
+        let attack_mask = bishop ? bMask(square) : rMask(square);
+        let relevant_bits_count = util.count_1s(attack_mask);
+        let occupancy_indicies = (1 << relevant_bits_count);
+        for (let index = 0; index < occupancy_indicies; index++)
+        {
+            if (bishop)
+            {
+                let occupancy = set_occupancy(index, relevant_bits_count, attack_mask);
+                let magic_index = (occupancy * bishop_magic_numbers[square]) >> (64n - BigInt(nBBits[square]));
+                bishop_attacks[square][Number(magic_index)] = bishopAttacksOnTheFly(occupancy,square);
+            }
+            else
+            {
+                let occupancy = set_occupancy(index, relevant_bits_count, attack_mask);
+                let magic_index = (occupancy * rook_magic_numbers[square]) >> (64n - BigInt(nRBits[square]));
+                rook_attacks[square][Number(magic_index)] = rookAttacksOnTheFly(occupancy,square);
+            
+            }
+        }
+    }
+}

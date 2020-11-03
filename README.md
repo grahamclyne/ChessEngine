@@ -31,3 +31,5 @@ global variable CHECK_FLAG in game.ts a good idea?
 how can history and board state be coupled that neither can be out of sync?
 
 two weeks until bug free random move games being played
+
+there is some seriously dubious logic going on with the magic bitboard --- need to convert a bigint to a number to set the index, which is outside js's range for a safe int. This needs to be remedied

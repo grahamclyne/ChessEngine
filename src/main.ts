@@ -7,6 +7,13 @@ import * as check from './check'
 import * as tree from './tree'
 import { memoryUsage } from 'process'
 import * as search from './search'
+import { reduce } from 'lodash'
+import * as magic from './magic'
+
+import { Logger } from "tslog";
+const log: Logger = new Logger({ name: "myLogger" });
+
+
 let BP1 = bsutil.setRange(0n, 48, 55, 1);
 let BR1 = bsutil.set(0n, 0 + 56, 1)
 BR1 = bsutil.set(BR1, 7 + 56, 1)
@@ -16,6 +23,7 @@ let BB1 = bsutil.set(0n, 2 + 56, 1)
 BB1 = bsutil.set(BB1, 5 + 56, 1)
 let BQ1 = bsutil.set(0n, 3 + 56, 1)
 let BK1 = bsutil.set(0n, 4 + 56, 1)
+
 let WP1 = bsutil.setRange(0n, 8, 15, 1);
 let WR1 = bsutil.set(0n, 0, 1)
 WR1 = bsutil.set(WR1, 7, 1)
@@ -41,13 +49,14 @@ let WQ = [WQ1, 'WQ']
 let WK = [WK1, 'WK']
 
 let board = util.newBoard(WP, WR, WN, WB, WQ, WK, BP, BR, BN, BB, BQ, BK)
-let opponent = 'HUMAN'
-//game.play(board, [], opponent)
+let opponent = 'HMAN'
+log.info("initializing slider attacks...")
+magic.init_sliders_attacks(true)
+magic.init_sliders_attacks(false)
+log.info("Done!")
+game.play(board, [], opponent)
 
-// let used = memoryUsage()
-// for (let key in used) {
-//   console.log(`${key} ${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`);
-// }
+
 // let child5 = {board:0n, move:[], weight:5,children:[]}
 // let child4 = {board:0n, move:[], weight:4,children:[child5]}
 // let child3 = {board:0n, move:[], weight:3,children:[]}
@@ -58,5 +67,16 @@ let opponent = 'HUMAN'
 // //tree.bfs(treeN)
 // tree.dfs(treeN)
 
-let filled = search.startMiniMax('W',[],board)
-search.showAllChildren(filled)
+
+
+
+// var hrstart = process.hrtime()
+// let filled = search.startMiniMax('W',[],board)
+// //search.showAllChildren(filled,0)
+
+// var hrend = process.hrtime(hrstart)
+// console.info('Execution time (hr): %ds %dms', hrend[0], hrend[1] / 1000000)
+// let used = memoryUsage()
+// for (let key in used) {
+//   console.log(`${key} ${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`);
+// }
