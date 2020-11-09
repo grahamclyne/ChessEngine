@@ -5,79 +5,121 @@
 import { count_1s } from "./util"
 import * as tree from "./tree"
 import * as game from './game'
-import { reduce} from 'lodash'
-export function staticEvaluation(colour, board,mobility) {
-    let oppColour = (colour == 'W') ? 'B' : 'W'
-    let score = count_1s(board.get(colour + 'P')) - count_1s(board.get(oppColour + 'P'))
-    score = score + (3 * (count_1s(board.get(colour + 'N')) + count_1s(board.get(colour + 'B')) - (count_1s(board.get(oppColour + 'N')) + count_1s(board.get(oppColour + 'B')))))
-    score = score + (5 * (count_1s(board.get(colour + 'R')) - count_1s(board.get(oppColour + 'R'))))
-    score = score + (9 * (count_1s(board.get(colour + 'Q')) - count_1s(board.get(oppColour + 'Q'))))
-    score = score + (200 * (count_1s(board.get(colour + 'K')) - count_1s(board.get(oppColour + 'K'))))
-    score = score + (0.1 * mobility)
+import { reduce } from 'lodash'
 
+
+export function staticEvaluation(board, mobility) {
+    let score = count_1s(board.get('WP')) - count_1s(board.get('BP'))
+    score = score + (3 * (count_1s(board.get('WN')) + count_1s(board.get('WB')) - (count_1s(board.get('BN')) + count_1s(board.get('BB')))))
+    score = score + (5 * (count_1s(board.get('WR')) - count_1s(board.get('BR'))))
+    score = score + (9 * (count_1s(board.get('WQ')) - count_1s(board.get('BQ'))))
+    score = score + (200 * (count_1s(board.get('WK')) - count_1s(board.get('BK'))))
+  //  score = score + (0.1 * mobility)
+    //is check
     return score
 }
 
-export function startMiniMax(colour,history,board){
-
-    let root:tree.TreeNode = {board:board,weight:0, move:null,children:[]}
-    let filled = buildSearchSpace(colour,history,board,0,root,6)
-  //  let move = miniMax()
-    return filled
+export function startMiniMax(colour, history, board) {
+    let MAX_DEPTH = 3;
+    return buildSearchSpace(colour, history, board, 0, { board: board, weight: 0, move: null, children: [] }, MAX_DEPTH)
 }
-export function buildSearchSpace(colour,history,board,depth,node, enddepth){
+
+function buildSearchSpace(colour, history, board, depth, node, enddepth) {
     let oppColour = (colour == 'W') ? 'B' : 'W'
-    if(depth == enddepth){
+    let moves = game.findMoves(colour, history, board)
+    if (depth == enddepth) {
+        let score = staticEvaluation(board, moves.length)
+        node.weight = score
         return node
     }
-    let moves = game.findMoves(colour,history,board)
     moves.forEach(move => {
-        let tempBoard = game.makeMove(move,colour,board)
-        let score = staticEvaluation(colour,tempBoard, moves.length)
-        let child:tree.TreeNode = {board:tempBoard, weight:score,move:move, children:[]}
-        child = buildSearchSpace(oppColour,history,tempBoard,depth + 2, child,enddepth)
+        let tempBoard = game.makeMove(move, colour, board)
+        let child: tree.TreeNode = { board: tempBoard, weight: 0, move: move, children: [] }
+        child = buildSearchSpace(oppColour, history, tempBoard, depth + 1, child, enddepth)
         node.children.push(child)
     })
     return node
 }
-// f(p) = 200(K-K')
-//        + 9(Q-Q')
-//        + 5(R-R')
-//        + 3(B-B' + N-N')
-//        + 1(P-P')
-//        - 0.5(D-D' + S-S' + I-I')
-//        + 0.1(M-M') + ...
+
+
+export function minimax1(position, depth, colour, board, history) {
+    let moves = game.findMoves(colour, history, board)
+    let oppColour = (colour == 'W') ? 'B' : 'W';
+    let compareFunc = Math.max
+    let evaluation = -Infinity
+    if (colour == 'B') {
+        compareFunc = Math.min
+        evaluation = Infinity
+    }
+    if (depth == 0 /*|| game over?*/) {
+        let weight = staticEvaluation(board, moves.length)
+        return { board: position.board, weight: weight, move: position.move, children: position.children }
+    }
+    moves.forEach(move => {
+        let tempBoard = game.makeMove(move, colour, board)
+        let child = { board: tempBoard, weight: 0, move: move, children: [] }
+        let w = minimax1(child, depth - 1, oppColour, child.board, history)
+        evaluation = compareFunc(w.weight, evaluation)
+        position.children.push(w)
+    })
+
+    return { board: position.board, weight: evaluation, move: position.move, children: position.children }
+}
 
 
 
+export function minimax1alpha(position, depth, colour, alpha,beta,board, history) {
+    let moves = game.findMoves(colour, history, board)
+    let oppColour = (colour == 'W') ? 'B' : 'W';
+    let compareFunc = Math.max
+    let evaluation = -Infinity
+    if (colour == 'B') {
+        compareFunc = Math.min
+        evaluation = Infinity
+    }
+    if (depth == 0 /*|| game over?*/) {
+        let weight = staticEvaluation(board, moves.length)
+        return { board: position.board, weight: weight, move: position.move, children: position.children }
+    }
+    for(let move of moves) {
+        let tempBoard = game.makeMove(move, colour, board)
+        let child = { board: tempBoard, weight: 0, move: move, children: [] }
+        let w = minimax1alpha(child, depth - 1, oppColour, alpha,beta,child.board, history)
+        if(colour == 'W'){
+            evaluation = compareFunc(w.weight,evaluation)
+            alpha = compareFunc(alpha, w.weight)
+        }
+        else{
+            evaluation = compareFunc(w.weight,evaluation)
+            beta = compareFunc(beta,w.weight)
+        }
+        if(beta <= alpha){
+            break
+        }
+        
+        position.children.push(w)
+    }
+   // console.log('alpha:', alpha, 'beta: ', beta)
+    return { board: position.board, weight: evaluation, move: position.move, children: position.children }
+}
 
-// int negaMax( int depth ) {
-//     if ( depth == 0 ) return evaluate();
-//     int max = -oo;
-//     for ( all moves)  {
-//         score = -negaMax( depth - 1 );
-//         if( score > max )
-//             max = score;
-//     }
-//     return max;
-// 
 
-//need post order traversal
-export function minimax(position,depth,maximizing){
-    if(depth == 0 /*|| game over?*/){
+
+export function minimax(position, depth, maximizing) {
+    if (depth == 0 /*|| game over?*/) {
         return position.weight
     }
-    if(maximizing){
+    if (maximizing) {
         let maxEval = -Infinity
         position.children.forEach(child => {
-            let w = minimax(child, depth -1, false)
+            let w = minimax(child, depth - 1, false)
             maxEval = Math.max(w, maxEval)
 
         })
         position.weight = maxEval
         return maxEval
     }
-    else{
+    else {
         let minEval = Infinity
         position.children.forEach(child => {
             let w = minimax(child, depth - 1, true)
@@ -89,10 +131,10 @@ export function minimax(position,depth,maximizing){
 }
 
 
-export function showAllChildren(node : tree.TreeNode,tabs){
+export function showAllChildren(node: tree.TreeNode, tabs) {
     let toPrint = ''
     let count = 0
-    while(count < tabs){
+    while (count < tabs) {
         toPrint = '\t' + toPrint
         count++
     }
@@ -101,6 +143,6 @@ export function showAllChildren(node : tree.TreeNode,tabs){
     process.stdout.write('\n')
 
     node.children.forEach(child => {
-        showAllChildren(child,tabs+1)
+        showAllChildren(child, tabs + 1)
     })
 }

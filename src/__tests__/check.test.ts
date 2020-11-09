@@ -94,3 +94,12 @@ test('stalemate', () => {
     expect(check.isCheckMate('B',board,[])).toBe(2)
     expect(check.isCheck('B',board)).toBe(false)   
 })
+
+test('captpure out of check', () => {
+    let BQ = [bsutil.set(0n,59,1),'BQ']
+    let WQ = [bsutil.set(0n,58,1), 'WQ']
+    let BK = [bsutil.set(0n, 60, 1), "BK"]
+    let board = utils.newBoard(BK,WQ,BQ); 
+    expect(check.isCheck('B',board)).toBe(false)
+     
+})

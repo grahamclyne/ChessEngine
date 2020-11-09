@@ -225,9 +225,10 @@ export function getMoves(board, colour, history) {
     for (let i in moves) {
         movesFin = movesFin.concat(convertMovesToList(moves[i][0], moves[i][1], moves[i][2]))
     }
-    let movesNoCheck = findNoCheckMoves(movesFin.concat(pawns), board, colour)
-    let movesWithCapture = findCaptures(movesNoCheck, board, colour)
-    return movesWithCapture
+    //need to set capture before finding no check moves in case scenario where capture to get out of check
+    let movesWithCapture = findCaptures(movesFin.concat(pawns), board, colour)
+    let movesNoCheck = findNoCheckMoves(movesWithCapture, board, colour)
+    return movesNoCheck
 }
 
 export function findCaptures(moves, board, colour) {

@@ -69,7 +69,11 @@ export async function play(board, history, opponent) {
     let colour = 'W'
     let states = []
     while (true) {
+        var hrstart = process.hrtime()
         board = takeTurn(board, history, colour, states)
+        var hrend = process.hrtime(hrstart)
+        log.info('Turn time (hr): %ds %dms', hrend[0], hrend[1] / 1000000)
+
         colour = (colour == 'W') ? 'B' : 'W'
         if (checkEndGameConditions(board,states,history,colour)) break
         if (opponent == 'HUMAN') {
@@ -95,6 +99,8 @@ export function takeTurn(board, history, colour, states) {
     let filled = search.startMiniMax(colour,history,board)
     let moveWeight = search.minimax(filled,3,true)
     let move = []
+    log.info("move weight:", moveWeight)
+    search.showAllChildren(filled,0)
     filled.children.forEach(child => {
         if (child.weight == moveWeight){
             move = child.move
@@ -103,18 +109,18 @@ export function takeTurn(board, history, colour, states) {
    // let rand = Math.floor(Math.random() * legalMoves.length)
    // let move = legalMoves[rand]
     log.info("Move chosen:",move)
-    while (CHECK_FLAG) {
-        let boardState = makeMove(move, colour, board)
-        if (!check.isCheck(colour, boardState)) {
-            CHECK_FLAG = false
-        }
-        else {
-            legalMoves = legalMoves.filter((x) => { if (!util.arrayEquals(x, move)) return x })
-        }
-        let rand = Math.floor(Math.random() * legalMoves.length)
-        move = legalMoves[rand]
-        log.info('Move to get out of check:' + move)
-    }
+    // while (CHECK_FLAG) {
+    //     let boardState = makeMove(move, colour, board)
+    //     if (!check.isCheck(colour, boardState)) {
+    //         CHECK_FLAG = false
+    //     }
+    //     else {
+    //         legalMoves = legalMoves.filter((x) => { if (!util.arrayEquals(x, move)) return x })
+    //     }
+    //     let rand = Math.floor(Math.random() * legalMoves.length)
+    //     move = legalMoves[rand]
+    //     log.info('Move to get out of check:' + move)
+    // }
 
     history.push(move)
     let newBoard = makeMove(move, colour, board)

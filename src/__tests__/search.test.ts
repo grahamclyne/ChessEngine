@@ -7,7 +7,7 @@ test('staticEvaluation: a king and two pawns', () => {
     let WR = [bsutil.set(0n, 2, 1), 'WR']
     let BK = [bsutil.set(0n, 3, 1), 'BK']
     let board = util.newBoard(WP,WR,BK)
-    expect(search.staticEvaluation('W', board,0)).toBe(-194)
+    expect(search.staticEvaluation(board,0)).toBe(-194)
 })
 
 test('minimax', () => {
