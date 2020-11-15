@@ -1,5 +1,4 @@
-import * as utils from './util'
-import * as constants from './constants'
+import * as util from './util'
 import * as bsutil from './bitSetUtils'
 import * as magic from "./magic"
 import * as game from './game'
@@ -23,19 +22,19 @@ export function getPawnMoves(board, colour, history) {
     let enpassant;
     if (colour == 'W') {
         shiftFunction = function (x, y) { return x << y }
-        lastRank = constants.RANK_8;
-        leftSide = constants.FILE_A;
-        rightSide = constants.FILE_H;
-        twoForward = constants.RANK_4;
+        lastRank = util.RANK_8;
+        leftSide = util.FILE_A;
+        rightSide = util.FILE_H;
+        twoForward = util.RANK_4;
         operator = function (a, b) { return a - b }
         enpassant = function (a, b) { return a + b }
     }
     else {
         shiftFunction = function (x, y) { return x >> y }
-        lastRank = constants.RANK_1;
-        leftSide = constants.FILE_H;
-        rightSide = constants.FILE_A;
-        twoForward = constants.RANK_5;
+        lastRank = util.RANK_1;
+        leftSide = util.FILE_H;
+        rightSide = util.FILE_A;
+        twoForward = util.RANK_5;
         operator = function (a, b) { return a + b }
         enpassant = function (a, b) { return a - b }
     }
@@ -112,12 +111,12 @@ export function generatePossibleMoves(bitSet, f1, f2, piece, moveType) {
 export function pawnAttacks(pawnBoard, colour) {
     let attacks = 0n;
     if (colour == 'W') {
-        attacks |= (pawnBoard << 7n) & bsutil.not(constants.FILE_H);
-        attacks |= (pawnBoard << 9n) & bsutil.not(constants.FILE_A);
+        attacks |= (pawnBoard << 7n) & bsutil.not(util.FILE_H);
+        attacks |= (pawnBoard << 9n) & bsutil.not(util.FILE_A);
     }
     else {
-        attacks |= (pawnBoard >> 7n) & bsutil.not(constants.FILE_A);
-        attacks |= (pawnBoard >> 9n) & bsutil.not(constants.FILE_H);
+        attacks |= (pawnBoard >> 7n) & bsutil.not(util.FILE_A);
+        attacks |= (pawnBoard >> 9n) & bsutil.not(util.FILE_H);
     }
     return [[attacks, 0n, "P"]];
 }
@@ -148,14 +147,14 @@ export function bishopMoves(occ, sq) {
 export function knightMoves(sq) {
     let attacks = 0n
     let bitboard = bsutil.set(0n, sq, 1)
-    if ((bitboard >> 17n) & bsutil.not(constants.FILE_H)) attacks |= (bitboard >> 17n);
-    if ((bitboard >> 15n) & bsutil.not(constants.FILE_A)) attacks |= (bitboard >> 15n);
-    if ((bitboard >> 10n) & bsutil.not(constants.FILE_H) & bsutil.not(constants.FILE_G)) attacks |= (bitboard >> 10n);
-    if ((bitboard >> 6n) & bsutil.not(constants.FILE_A) & bsutil.not(constants.FILE_B)) attacks |= (bitboard >> 6n);
-    if ((bitboard << 17n) & bsutil.not(constants.FILE_A)) attacks |= (bitboard << 17n);
-    if ((bitboard << 15n) & bsutil.not(constants.FILE_H)) attacks |= (bitboard << 15n);
-    if ((bitboard << 10n) & bsutil.not(constants.FILE_A) & bsutil.not(constants.FILE_B)) attacks |= (bitboard << 10n);
-    if ((bitboard << 6n) & bsutil.not(constants.FILE_H) & bsutil.not(constants.FILE_G)) attacks |= (bitboard << 6n);
+    if ((bitboard >> 17n) & bsutil.not(util.FILE_H)) attacks |= (bitboard >> 17n);
+    if ((bitboard >> 15n) & bsutil.not(util.FILE_A)) attacks |= (bitboard >> 15n);
+    if ((bitboard >> 10n) & bsutil.not(util.FILE_H) & bsutil.not(util.FILE_G)) attacks |= (bitboard >> 10n);
+    if ((bitboard >> 6n) & bsutil.not(util.FILE_A) & bsutil.not(util.FILE_B)) attacks |= (bitboard >> 6n);
+    if ((bitboard << 17n) & bsutil.not(util.FILE_A)) attacks |= (bitboard << 17n);
+    if ((bitboard << 15n) & bsutil.not(util.FILE_H)) attacks |= (bitboard << 15n);
+    if ((bitboard << 10n) & bsutil.not(util.FILE_A) & bsutil.not(util.FILE_B)) attacks |= (bitboard << 10n);
+    if ((bitboard << 6n) & bsutil.not(util.FILE_H) & bsutil.not(util.FILE_G)) attacks |= (bitboard << 6n);
     attacks = BigInt.asUintN(64, BigInt(attacks))
     return attacks
 }
@@ -170,15 +169,15 @@ export function queenMoves(occ, sq) {
 export function kingMoves(sq) {
     let attacks = 0n;
     let bitboard = bsutil.set(0n, sq, 1)
-    //the not constants.FILE_H is to stop wraparound!!!
-    if ((bitboard >> 1n) & bsutil.not(constants.FILE_H)) attacks |= (bitboard >> 1n);
-    if ((bitboard >> 7n) & bsutil.not(constants.FILE_A)) attacks |= (bitboard >> 7n);
+    //the not util.FILE_H is to stop wraparound!!!
+    if ((bitboard >> 1n) & bsutil.not(util.FILE_H)) attacks |= (bitboard >> 1n);
+    if ((bitboard >> 7n) & bsutil.not(util.FILE_A)) attacks |= (bitboard >> 7n);
     attacks |= (bitboard >> 8n);
-    if ((bitboard >> 9n) & bsutil.not(constants.FILE_H)) attacks |= (bitboard >> 9n);
-    if ((bitboard << 1n) & bsutil.not(constants.FILE_A)) attacks |= (bitboard << 1n);
-    if ((bitboard << 7n) & bsutil.not(constants.FILE_H)) attacks |= (bitboard << 7n);
+    if ((bitboard >> 9n) & bsutil.not(util.FILE_H)) attacks |= (bitboard >> 9n);
+    if ((bitboard << 1n) & bsutil.not(util.FILE_A)) attacks |= (bitboard << 1n);
+    if ((bitboard << 7n) & bsutil.not(util.FILE_H)) attacks |= (bitboard << 7n);
     attacks |= (bitboard << 8n);
-    if ((bitboard << 9n) & bsutil.not(constants.FILE_A)) attacks |= (bitboard << 9n);
+    if ((bitboard << 9n) & bsutil.not(util.FILE_A)) attacks |= (bitboard << 9n);
     attacks = BigInt.asUintN(64, BigInt(attacks)) //truncate... this probably slowing things down? 
     return attacks
 }

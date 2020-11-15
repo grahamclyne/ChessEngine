@@ -1,4 +1,10 @@
-bitv library -> https://www.lri.fr/~filliatr/ftp/ocaml/ds/bitv.mli.html
+
+
+Chess Engine
+
+Uses magic bitboards for sliding moves - https://www.chessprogramming.org/Magic_Bitboards
+Uses minimax with alpha beta pruning for search - currently can search to depth 4 in a few seconds
+Uses UCI to interface with other chess engines - https://en.wikipedia.org/wiki/Universal_Chess_Interface
 
 
 So how do we decide how to map each chess board square to a bit in the 64-bit integer? This mapping could be arbitrary, but it behooves us to pick a mathematically advantageous mapping. In this particular mapping (or winding) we are going to say that position a1 is the least signficant bit (LSB), bit 0, of the 64 bit number and h8 is the most significant bit (MSB), bit 63. The squares will be assigned in a left to right, bottom to top ordering to each bit index in the 64 bit number from LSB to MSB.
@@ -21,8 +27,15 @@ A1 	B1 	C1 	D1 	E1 	F1 	G1 	H1
 0 	1 	2 	3 	4 	5 	6 	7
 
 
-"c:\Users\Graham Clyne\Documents\chessEngine\node_modules\.bin\tsc.cmd" && node dist\main.js
 
+
+
+
+
+
+
+
+NOTES TO SELF
 
 we use jest because mohca/chai does not have support for bigint
 javascript/typescript - Objects and arrays are passed by reference. Primitive values like number, string, boolean are passed by value. A reference to an object is also a primitive type and passed by value like other primitive types, but the object it refers to is still passed by reference.
@@ -33,3 +46,5 @@ how can history and board state be coupled that neither can be out of sync?
 two weeks until bug free random move games being played
 
 there is some seriously dubious logic going on with the magic bitboard --- need to convert a bigint to a number to set the index, which is outside js's range for a safe int. This needs to be remedied
+
+watch out for cirular imports

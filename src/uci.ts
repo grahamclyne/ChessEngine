@@ -2,7 +2,15 @@
 // //https://python-chess.readthedocs.io/en/v0.15.3/uci.html?highlight=engine
 // //https://gist.github.com/aliostad/f4470274f39d29b788c1b09519e67372
 
+import * as util from './util'
+// 2020-11-09 16:22:20.232-->1:ucinewgame
+// 2020-11-09 16:22:20.233-->1:isready
+// 2020-11-09 16:22:20.342-->1:position startpos moves e2e4
+// 2020-11-09 16:22:20.342-->1:go wtime 360000 btime 360000 winc 0 binc 0
 
+//If you use Arena, you can hit F4 to see a log of the command interaction
+
+var DEBUG_MODE = false
 // Visit mainpage
 
 // The UCI protocol as publiced by Stefan-Meyer Kahlen (ShredderChess):
@@ -52,215 +60,177 @@
 
 
 
-// GUI to engine:
-// --------------
-
-// These are all the command the engine gets from the interface.
-
-
-// * uci
-// 	tell engine to use the uci (universal chess interface),
-// 	this will be send once as a first command after program boot
-// 	to tell the engine to switch to uci mode.
-// 	After receiving the uci command the engine must identify itself with the "id" command
-// 	and sent the "option" commands to tell the GUI which engine settings the engine supports if any.
-// 	After that the engine should sent "uciok" to acknowledge the uci mode.
-// 	If no uciok is sent within a certain time period, the engine task will be killed by the GUI.
-function uci() {
-    console.log('hello')
-}
-
-// * debug [ on | off ]
-// 	switch the debug mode of the engine on and off.
-// 	In debug mode the engine should sent additional infos to the GUI, e.g. with the "info string" command,
-// 	to help debugging, e.g. the commands that the engine has received etc.
-// 	This mode should be switched off by default and this command can be sent
-// 	any time, also when the engine is thinking.
-function debug() {
-
-}
-
-// * isready
-// 	this is used to synchronize the engine with the GUI. When the GUI has sent a command or
-// 	multiple commands that can take some time to complete,
-// 	this command can be used to wait for the engine to be ready again or
-// 	to ping the engine to find out if it is still alive.
-// 	E.g. this should be sent after setting the path to the tablebases as this can take some time.
-// 	This command is also required once before the engine is asked to do any search
-// 	to wait for the engine to finish initializing.
-// 	This command must always be answered with "readyok" and can be sent also when the engine is calculating
-// 	in which case the engine should also immediately answer with "readyok" without stopping the search.
-function isready() {
-
-}
-
-// * setoption name  [value ]
-// 	this is sent to the engine when the user wants to change the internal parameters
-// 	of the engine. For the "button" type no value is needed.
-// 	One string will be sent for each parameter and this will only be sent when the engine is waiting.
-// 	The name of the option in  should not be case sensitive and can inludes spaces like also the value.
-// 	The substrings "value" and "name" should be avoided in  and  to allow unambiguous parsing,
-// 	for example do not use  = "draw value".
-// 	Here are some strings for the example below:
-// 	   "setoption name Nullmove value true\n"
-//       "setoption name Selectivity value 3\n"
-// 	   "setoption name Style value Risky\n"
-// 	   "setoption name Clear Hash\n"
-// 	   "setoption name NalimovPath value c:\chess\tb\4;c:\chess\tb\5\n"
-function setoption() {
-
-}
-
-// * register
-// 	this is the command to try to register an engine or to tell the engine that registration
-// 	will be done later. This command should always be sent if the engine	has send "registration error"
-// 	at program startup.
-// 	The following tokens are allowed:
-// 	* later
-// 	   the user doesn't want to register the engine now.
-// 	* name 
-// 	   the engine should be registered with the name 
-// 	* code 
-// 	   the engine should be registered with the code 
-// 	Example:
-// 	   "register later"
-// 	   "register name Stefan MK code 4359874324"
-function register() {
-
-}
-
-
-// * ucinewgame
-//    this is sent to the engine when the next search (started with "position" and "go") will be from
-//    a different game. This can be a new game the engine should play or a new game it should analyse but
-//    also the next position from a testsuite with positions only.
-//    If the GUI hasn't sent a "ucinewgame" before the first "position" command, the engine shouldn't
-//    expect any further ucinewgame commands as the GUI is probably not supporting the ucinewgame command.
-//    So the engine should not rely on this command even though all new GUIs should support it.
-//    As the engine's reaction to "ucinewgame" can take some time the GUI should always send "isready"
-//    after "ucinewgame" to wait for the engine to finish its operation.
-function ucinewgame() {
-
-}
-
-
-
-// * position [fen  | startpos ]  moves  .... 
-// 	set up the position described in fenstring on the internal board and
-// 	play the moves on the internal chess board.
-// 	if the game was played  from the start position the string "startpos" will be sent
-// 	Note: no "new" command is needed. However, if this position is from a different game than
-// 	the last position sent to the engine, the GUI should have sent a "ucinewgame" inbetween.
-function position() {
-
-}
-
-
-// * go
-// 	start calculating on the current position set up with the "position" command.
-// 	There are a number of commands that can follow this command, all will be sent in the same string.
-// 	If one command is not send its value should be interpreted as it would not influence the search.
-function go() {
-
-    // 	* searchmoves  .... 
-    // 		restrict search to this moves only
-    // 		Example: After "position startpos" and "go infinite searchmoves e2e4 d2d4"
-    // 		the engine should only search the two moves e2e4 and d2d4 in the initial position.
-    // 	* ponder
-    // 		start searching in pondering mode.
-    // 		Do not exit the search in ponder mode, even if it's mate!
-    // 		This means that the last move sent in in the position string is the ponder move.
-    // 		The engine can do what it wants to do, but after a "ponderhit" command
-    // 		it should execute the suggested move to ponder on. This means that the ponder move sent by
-    // 		the GUI can be interpreted as a recommendation about which move to ponder. However, if the
-    // 		engine decides to ponder on a different move, it should not display any mainlines as they are
-    // 		likely to be misinterpreted by the GUI because the GUI expects the engine to ponder
-    // 	   on the suggested move.
-    // 	* wtime 
-    // 		white has x msec left on the clock
-    // 	* btime 
-    // 		black has x msec left on the clock
-    // 	* winc 
-    // 		white increment per move in mseconds if x > 0
-    // 	* binc 
-    // 		black increment per move in mseconds if x > 0
-    // 	* movestogo 
-    //       there are x moves to the next time control,
-    // 		this will only be sent if x > 0,
-    // 		if you don't get this and get the wtime and btime it's sudden death
-    // 	* depth 
-    // 		search x plies only.
-    // 	* nodes 
-    // 	   search x nodes only,
-    // 	* mate 
-    // 		search for a mate in x moves
-    // 	* movetime 
-    // 		search exactly x mseconds
-    // 	* infinite
-    // 		search until the "stop" command. Do not exit the search without being told so in this mode!
-}
-
-// * stop
-// 	stop calculating as soon as possible,
-// 	don't forget the "bestmove" and possibly the "ponder" token when finishing the search
-function stop() {
-
-}
-
-// * ponderhit
-// 	the user has played the expected move. This will be sent if the engine was told to ponder on the same move
-// 	the user has played. The engine should continue searching but switch from pondering to normal search.
-function ponderhit() {
-
-}
-
-// * quit
-// 	quit the program as soon as possible
-function quit() {
-
-}
-
-
 //function called on startup
 function boot() {
     process.stdin.resume()
     process.stdin.setEncoding('utf8');
+
+
     process.stdin.on('data', function (chunk) {
+
+
+        // GUI to engine:
+        // --------------
+
+        // These are all the command the engine gets from the interface.
+        // * uci
+        // 	tell engine to use the uci (universal chess interface),
+        // 	this will be send once as a first command after program boot
+        // 	to tell the engine to switch to uci mode.
+        // 	After receiving the uci command the engine must identify itself with the "id" command
+        // 	and sent the "option" commands to tell the GUI which engine settings the engine supports if any.
+        // 	After that the engine should sent "uciok" to acknowledge the uci mode.
+        // 	If no uciok is sent within a certain time period, the engine task will be killed by the GUI.
         if (chunk.includes('uci')) {
-            uci()
+            id()
+            option()
+            uciok()
+
         }
+        // * debug [ on | off ]
+        // 	switch the debug mode of the engine on and off.
+        // 	In debug mode the engine should sent additional infos to the GUI, e.g. with the "info string" command,
+        // 	to help debugging, e.g. the commands that the engine has received etc.
+        // 	This mode should be switched off by default and this command can be sent
+        // 	any time, also when the engine is thinking.'
         else if (chunk.includes('debug')) {
-            debug()
+            DEBUG_MODE = (DEBUG_MODE == true) ? false : true;
         }
+        // * isready
+        // 	this is used to synchronize the engine with the GUI. When the GUI has sent a command or
+        // 	multiple commands that can take some time to complete,
+        // 	this command can be used to wait for the engine to be ready again or
+        // 	to ping the engine to find out if it is still alive.
+        // 	E.g. this should be sent after setting the path to the tablebases as this can take some time.
+        // 	This command is also required once before the engine is asked to do any search
+        // 	to wait for the engine to finish initializing.
+        // 	This command must always be answered with "readyok" and can be sent also when the engine is calculating
+        // 	in which case the engine should also immediately answer with "readyok" without stopping the search.
         else if (chunk.includes('isready')) {
-            isready()
+            console.log('readyok')
         }
+        // * setoption name  [value ]
+        // 	this is sent to the engine when the user wants to change the internal parameters
+        // 	of the engine. For the "button" type no value is needed.
+        // 	One string will be sent for each parameter and this will only be sent when the engine is waiting.
+        // 	The name of the option in  should not be case sensitive and can inludes spaces like also the value.
+        // 	The substrings "value" and "name" should be avoided in  and  to allow unambiguous parsing,
+        // 	for example do not use  = "draw value".
+        // 	Here are some strings for the example below:
+        // 	   "setoption name Nullmove value true\n"
+        //       "setoption name Selectivity value 3\n"
+        // 	   "setoption name Style value Risky\n"
+        // 	   "setoption name Clear Hash\n"
+        // 	   "setoption name NalimovPath value c:\chess\tb\4;c:\chess\tb\5\n"
         else if (chunk.includes('setoption name')) {
-            setoption()
         }
+        // * register
+        // 	this is the command to try to register an engine or to tell the engine that registration
+        // 	will be done later. This command should always be sent if the engine	has send "registration error"
+        // 	at program startup.
+        // 	The following tokens are allowed:
+        // 	* later
+        // 	   the user doesn't want to register the engine now.
+        // 	* name 
+        // 	   the engine should be registered with the name 
+        // 	* code 
+        // 	   the engine should be registered with the code 
+        // 	Example:
+        // 	   "register later"
+        // 	   "register name Stefan MK code 4359874324"
         else if (chunk.includes('register')) {
-            register()
         }
+        // * ucinewgame
+        //    this is sent to the engine when the next search (started with "position" and "go") will be from
+        //    a different game. This can be a new game the engine should play or a new game it should analyse but
+        //    also the next position from a testsuite with positions only.
+        //    If the GUI hasn't sent a "ucinewgame" before the first "position" command, the engine shouldn't
+        //    expect any further ucinewgame commands as the GUI is probably not supporting the ucinewgame command.
+        //    So the engine should not rely on this command even though all new GUIs should support it.
+        //    As the engine's reaction to "ucinewgame" can take some time the GUI should always send "isready"
+        //    after "ucinewgame" to wait for the engine to finish its operation.
         else if (chunk.includes('ucinewgame')) {
-            ucinewgame()
         }
+
+        // * position [fen  | startpos ]  moves  .... 
+        // 	set up the position described in fenstring on the internal board and
+        // 	play the moves on the internal chess board.
+        // 	if the game was played  from the start position the string "startpos" will be sent
+        // 	Note: no "new" command is needed. However, if this position is from a different game than
+        // 	the last position sent to the engine, the GUI should have sent a "ucinewgame" inbetween.
         else if (chunk.includes('position')) {
-            position()
+            let board = util.newBoard()
+            if(chunk.includes('startpos')){
+                board = util.startPositions()
+            }
+            else if(chunk.includes('fen')){
+                let fenString = chunk.split(" ")[2]
+                let parsed = util.parseFEN(fenString)
+
+            }
         }
+
+        // * go
+        // 	start calculating on the current position set up with the "position" command.
+        // 	There are a number of commands that can follow this command, all will be sent in the same string.
+        // 	If one command is not send its value should be interpreted as it would not influence the search.
         else if (chunk.includes('go')) {
-            go()
+            // 	* searchmoves  .... 
+            // 		restrict search to this moves only
+            // 		Example: After "position startpos" and "go infinite searchmoves e2e4 d2d4"
+            // 		the engine should only search the two moves e2e4 and d2d4 in the initial position.
+            // 	* ponder
+            // 		start searching in pondering mode.
+            // 		Do not exit the search in ponder mode, even if it's mate!
+            // 		This means that the last move sent in in the position string is the ponder move.
+            // 		The engine can do what it wants to do, but after a "ponderhit" command
+            // 		it should execute the suggested move to ponder on. This means that the ponder move sent by
+            // 		the GUI can be interpreted as a recommendation about which move to ponder. However, if the
+            // 		engine decides to ponder on a different move, it should not display any mainlines as they are
+            // 		likely to be misinterpreted by the GUI because the GUI expects the engine to ponder
+            // 	   on the suggested move.
+            // 	* wtime 
+            // 		white has x msec left on the clock
+            // 	* btime 
+            // 		black has x msec left on the clock
+            // 	* winc 
+            // 		white increment per move in mseconds if x > 0
+            // 	* binc 
+            // 		black increment per move in mseconds if x > 0
+            // 	* movestogo 
+            //       there are x moves to the next time control,
+            // 		this will only be sent if x > 0,
+            // 		if you don't get this and get the wtime and btime it's sudden death
+            // 	* depth 
+            // 		search x plies only.
+            // 	* nodes 
+            // 	   search x nodes only,
+            // 	* mate 
+            // 		search for a mate in x moves
+            // 	* movetime 
+            // 		search exactly x mseconds
+            // 	* infinite
+            // 		search until the "stop" command. Do not exit the search without being told so in this mode!
+            console.log('bestmove e7e5')
         }
+
+        // * stop
+        // 	stop calculating as soon as possible,
+        // 	don't forget the "bestmove" and possibly the "ponder" token when finishing the search
         else if (chunk.includes('stop')) {
             stop()
         }
+        // * ponderhit
+        // 	the user has played the expected move. This will be sent if the engine was told to ponder on the same move
+        // 	the user has played. The engine should continue searching but switch from pondering to normal search.
         else if (chunk.includes('ponderhit')) {
-            ponderhit()
         }
+
+        // * quit
+        // 	quit the program as soon as possible
         else if (chunk.includes('quit')) {
-            quit()
         }
     }).on('end', function () { // called when stdin closes (via ^D)
-        console.log('stdin:closed');
     });
 }
 
@@ -275,13 +245,14 @@ function boot() {
 // 		this must be sent after receiving the "uci" command to identify the engine,
 // 		e.g. "id author Stefan MK\n"
 function id() {
-
+    console.log('id name TOTAL IDIOT')
+    console.log('id author loserbrain')
 }
 // * uciok
 // 	Must be sent after the id and optional options to tell the GUI that the engine
 // 	has sent all infos and is ready in uci mode.
-function uciok(){
-
+function uciok() {
+    console.log('uciok')
 }
 // * readyok
 // 	This must be sent when the engine has received an "isready" command and has
@@ -289,8 +260,8 @@ function uciok(){
 // 	It is usually sent after a command that can take some time to be able to wait for the engine,
 // 	but it can be used anytime, even when the engine is searching,
 // 	and must always be answered with "isready".
-function readyok(){
-
+function readyok() {
+    process.stdout.write('readyok')
 }
 // * bestmove  [ ponder  ]
 // 	the engine has stopped searching and found the move  best in this position.
@@ -299,7 +270,7 @@ function readyok(){
 // 	"stop" command, so for every "go" command a "bestmove" command is needed!
 // 	Directly before that the engine should send a final "info" command with the final search information,
 // 	the the GUI has the complete statistics about the last search.
-function bestmove(){
+function bestmove() {
 
 }
 // * copyprotection
@@ -516,8 +487,8 @@ function info() {
 // 	   "option name Style type combo default Normal var Solid var Normal var Risky\n"
 // 	   "option name NalimovPath type string default c:\\n"
 // 	   "option name Clear Hash type button\n"
-function option(){
-    
+function option() {
+
 }
 
 

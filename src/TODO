@@ -1,13 +1,11 @@
 scenario where player has more than two queens
-premake move boards 
-stalemate vs checkmate
 consolidate castling logic
 add occ and attack boards? need to rememebr to update them at any point anything is updated
 expand isValidMove
 is it correct to assume for attack boards, we should only consider our own pieces as occupied? we can still attack that square? 
 checkmate logic and turn logic both contain code to check if there is move to get out of check....
 capture logic test
-
+factor out en passant logic from pawn moves
 
 
 

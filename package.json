@@ -3,8 +3,15 @@
   "version": "1.0.0",
   "description": "bitv library -> https://www.lri.fr/~filliatr/ftp/ocaml/ds/bitv.mli.html",
   "main": "engine.js",
+  "bin":"dist\\uci.js",
+  "pkg":{
+    "assets": ["node_modules/**/*","dist/*"],
+    "targets":["node12-win-x64"]
+  },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prestart":"tsc && pkg .", 
+    "start": "tsc && node dist/main.js"
   },
   "author": "",
   "license": "ISC",
