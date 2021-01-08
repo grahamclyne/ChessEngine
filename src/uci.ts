@@ -2,7 +2,10 @@
 // //https://python-chess.readthedocs.io/en/v0.15.3/uci.html?highlight=engine
 // //https://gist.github.com/aliostad/f4470274f39d29b788c1b09519e67372
 
-import * as util from './util'
+import { makeMoveUCI,pickMoveUCI } from './game';
+import {newBoard, startPositions}  from './util'
+
+import {init_sliders_attacks} from './magic'
 // 2020-11-09 16:22:20.232-->1:ucinewgame
 // 2020-11-09 16:22:20.233-->1:isready
 // 2020-11-09 16:22:20.342-->1:position startpos moves e2e4
@@ -64,11 +67,13 @@ var DEBUG_MODE = false
 function boot() {
     process.stdin.resume()
     process.stdin.setEncoding('utf8');
-
+    init_sliders_attacks(true)
+    init_sliders_attacks(false)
+    let board = newBoard()
 
     process.stdin.on('data', function (chunk) {
-
-
+        let chunks = chunk.split('\n')
+        for (chunk of chunks){
         // GUI to engine:
         // --------------
 
@@ -159,15 +164,20 @@ function boot() {
         // 	Note: no "new" command is needed. However, if this position is from a different game than
         // 	the last position sent to the engine, the GUI should have sent a "ucinewgame" inbetween.
         else if (chunk.includes('position')) {
-            let board = util.newBoard()
-            if(chunk.includes('startpos')){
-                board = util.startPositions()
+            let input = chunk.split(" ")
+            if(input[1] == 'startpos'){
+                board = startPositions()
             }
             else if(chunk.includes('fen')){
-                let fenString = chunk.split(" ")[2]
-                let parsed = util.parseFEN(fenString)
-
+                let fenString = input[2]
             }
+            let colour = 'W'
+            for(let i = 3; i < input.length; i++){
+                let move = input[i]
+                board = makeMoveUCI(move, board,colour)
+                colour = (colour == 'W') ? 'B' : 'W'
+            }
+
         }
 
         // * go
@@ -211,14 +221,16 @@ function boot() {
             // 		search exactly x mseconds
             // 	* infinite
             // 		search until the "stop" command. Do not exit the search without being told so in this mode!
-            console.log('bestmove e7e5')
+            let move = pickMoveUCI(board,[],'B')
+            console.log('bestmove ' + move)
+            board = makeMoveUCI(move, board,'B')
         }
 
         // * stop
         // 	stop calculating as soon as possible,
         // 	don't forget the "bestmove" and possibly the "ponder" token when finishing the search
         else if (chunk.includes('stop')) {
-            stop()
+            process.exit()
         }
         // * ponderhit
         // 	the user has played the expected move. This will be sent if the engine was told to ponder on the same move
@@ -230,6 +242,7 @@ function boot() {
         // 	quit the program as soon as possible
         else if (chunk.includes('quit')) {
         }
+    }
     }).on('end', function () { // called when stdin closes (via ^D)
     });
 }
@@ -582,3 +595,4 @@ boot()
 // // which is needed for every "go" command sent to tell the GUI
 // // that the engine is ready again
 // 		bestmove g1f3 ponder d8f6
+

@@ -27,24 +27,14 @@ A1 	B1 	C1 	D1 	E1 	F1 	G1 	H1
 0 	1 	2 	3 	4 	5 	6 	7
 
 
+To run:
 
+Etiher use UCI and create and executable
 
+or
 
+tsc && node run
 
+To test:
 
-
-
-
-NOTES TO SELF
-
-we use jest because mohca/chai does not have support for bigint
-javascript/typescript - Objects and arrays are passed by reference. Primitive values like number, string, boolean are passed by value. A reference to an object is also a primitive type and passed by value like other primitive types, but the object it refers to is still passed by reference.
-
-global variable CHECK_FLAG in game.ts a good idea?
-how can history and board state be coupled that neither can be out of sync?
-
-two weeks until bug free random move games being played
-
-there is some seriously dubious logic going on with the magic bitboard --- need to convert a bigint to a number to set the index, which is outside js's range for a safe int. This needs to be remedied
-
-watch out for cirular imports
+    tsc && npx jest dist\__tests__\uci.test.js

@@ -4,8 +4,13 @@ import * as util from '../util'
 import * as game from '../game'
 import {reduce} from 'lodash'
 
-test('pawn: white moves 1 forward', () => {
+import {init_sliders_attacks} from '../magic'
 
+
+init_sliders_attacks(true)
+init_sliders_attacks(false)
+
+test('pawn: white moves 1 forward', () => {
     let WP = [bsutil.set(0n, 28, 1), "WP"]
     let BP = [bsutil.set(0n, 36, 1), "BP"]
     let board = util.newBoard(WP, BP);
@@ -198,8 +203,8 @@ test('castling: black moves king side', () => {
     let K = [K1, 'BK']
     let board = util.newBoard(WR,K) 
     board = game.makeMove(['CASTLE-KING'],'B',board)
-    expect(board.get('BK')).toBe(util.pow(2n,62))
-    expect(board.get('BR')).toBe(util.pow(2n,61))
+    expect(board.get('BK')).toBe(bsutil.pow(2n,62))
+    expect(board.get('BR')).toBe(bsutil.pow(2n,61))
 })
 
 test('pawn promotion: 1 forward', () => {

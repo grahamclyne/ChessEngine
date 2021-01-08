@@ -8,18 +8,18 @@ import { memoryUsage } from 'process'
 import * as search from './search'
 import { reduce } from 'lodash'
 import * as magic from './magic'
-
+import * as uci from './uci'
 import { Logger } from "tslog";
 const log: Logger = new Logger({ name: "myLogger" });
 
 
 
-let opponent = 'HMAN'
-// log.info("initializing slider attacks...")
-// magic.init_sliders_attacks(true)
-// magic.init_sliders_attacks(false)
-// log.info("Done!")
-//game.play(util.startPosition(), [], opponent)
+let opponent = 'HUMAN'
+log.info("initializing slider attacks...")
+magic.init_sliders_attacks(true)
+magic.init_sliders_attacks(false)
+log.info("Done!")
+game.play(util.startPositions(), [], opponent)
 
 // //board = util.newBoard()
 // let level4_1 = {board:board, move:[], weight:10,children:[]}
@@ -79,5 +79,12 @@ let opponent = 'HMAN'
 // console.log(moves.getMoves(board,'B',[])) 
 
 
-let b = util.parseFEN('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-util.prettyPrintBoard(b)
+// let b = util.parseFEN('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+// util.prettyPrintBoard(b)
+// let WP = [bsutil.set(0n, 36, 1), "WP"]
+// let BP = [bsutil.set(0n, 37, 1), "BP"]
+// let move = ''
+// let board = util.newBoard(WP, BP);
+// board = game.makeMoveUCI(move, board,'B')
+
+// util.prettyPrintBoard(board)

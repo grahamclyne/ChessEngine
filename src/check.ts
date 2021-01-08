@@ -1,7 +1,8 @@
 import * as mp from './moves'
-import * as bsutil from './bitSetUtils'
 import * as game from './game'
 import * as utils from './util'
+
+
 export function isCheck(colour,board){//should this take a specific board and the attack board? 
     let king = board.get(colour+'K')
     let oppColour = (colour == 'W') ? 'B' : 'W'

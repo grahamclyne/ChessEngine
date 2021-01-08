@@ -90,7 +90,7 @@ expect(util.pieceCount(board)).toBe(14n)
 })
 
 test ('pow', () => {
-    expect(util.pow(2n, 2)).toBe(4n)
-    expect(util.pow(2n,0)).toBe(1n)
-    expect(util.pow(2n,62)).toBe(4611686018427387904n)
+    expect(bsutil.pow(2n, 2)).toBe(4n)
+    expect(bsutil.pow(2n,0)).toBe(1n)
+    expect(bsutil.pow(2n,62)).toBe(4611686018427387904n)
 })

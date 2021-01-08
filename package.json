@@ -1,16 +1,20 @@
 {
   "name": "chessengine",
   "version": "1.0.0",
-  "description": "bitv library -> https://www.lri.fr/~filliatr/ftp/ocaml/ds/bitv.mli.html",
+  "description": "chess engine",
   "main": "engine.js",
-  "bin":"dist\\uci.js",
-  "pkg":{
-    "assets": ["node_modules/**/*","dist/*"],
-    "targets":["node12-win-x64"]
+  "bin": "dist\\uci.js",
+  "pkg": {
+    "assets": [
+      "node_modules/**/*",
+      "dist/*"
+    ],
+    "targets": [
+      "node12-win-x64"
+    ]
   },
   "scripts": {
     "test": "jest",
-    "prestart":"tsc && pkg .", 
     "start": "tsc && node dist/main.js"
   },
   "author": "",
@@ -21,6 +25,7 @@
     "benchmark": "^2.1.4",
     "lodash": "^4.17.20",
     "microtime": "^3.0.0",
+    "node-fetch": "^2.6.1",
     "tslog": "^2.10.0"
   },
   "devDependencies": {

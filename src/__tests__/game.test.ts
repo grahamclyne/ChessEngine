@@ -1,7 +1,13 @@
 import * as game from '../game'
 import * as player from '../player'
-import * as bsutil from '../bitSetUtils'
-import * as utils from '../util'
+import * as util from '../util'
+
+import {init_sliders_attacks} from '../magic'
+
+
+init_sliders_attacks(true)
+init_sliders_attacks(false)
+
 test('sameMoveCheck: same move five times in a row', () => {
     let states = [18446462598733168637n, 18445341096872837117n, 18445341105462509565n,
         17868882552182341629n, 17868882552316557309n, 17868602176851474429n,
@@ -102,4 +108,14 @@ test('parseInputMove', () => {
     expect(player.parseInputSquare('a1')).toBe(0)
     expect(player.parseInputSquare('e7')).toBe(52)
     expect(player.parseInputSquare('e6')).toBe(44)
+})
+
+test('makeMoveUCI', () => {
+
+})
+
+test('pickMoveUCI', () => {
+    let board = util.startPositions()
+    let move = game.pickMoveUCI(board,[],'B')
+    expect(move).toEqual(expect.stringMatching('/([a-z][0-9]){2}/'))
 })

@@ -1,7 +1,10 @@
 import * as bsutil from '../bitSetUtils'
 import * as utils from '../util'
 import * as check from '../check'
-import {reduce} from 'lodash'
+import {init_sliders_attacks} from '../magic'
+
+init_sliders_attacks(true)
+init_sliders_attacks(false)
 
 test('is white king in check from pawn', () => {
     let BP = [bsutil.set(0n, 11,1), "BP"]

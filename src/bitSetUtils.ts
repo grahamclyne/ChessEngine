@@ -1,5 +1,3 @@
-import * as utils from './util'
-
 export function printBitSet(bitSet:bigint) {
     bitSet = BigInt.asUintN(200, bitSet)
     var x = bitSet.toString(2).split("").reverse()
@@ -15,7 +13,7 @@ export function printBitSet(bitSet:bigint) {
 }
 
 export function set(bitSet: bigint, index, value) {
-    let x: bigint = utils.pow(2n, Number(index))
+    let x: bigint = pow(2n, Number(index))
     return (value == 1) ? (x | bitSet) : bitSet & not(x)
 }
 
@@ -65,4 +63,13 @@ function ilog2(n: bigint) :number {  // n is a positive non-zero BigInt
 export function not(bitSet) {
     bitSet = BigInt.asUintN(64, BigInt(~bitSet))
     return bitSet
+}
+
+export function pow(b: bigint, exponent: number): bigint {
+	let output = 1n
+	while (exponent > 0) {
+		output = b * output
+		exponent--
+	}
+	return output
 }
