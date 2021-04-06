@@ -227,7 +227,43 @@ export function getMoves(board, colour, history) {
     //need to set capture before finding no check moves in case scenario where capture to get out of check
     let movesWithCapture = findCaptures(movesFin.concat(pawns), board, colour)
     let movesNoCheck = findNoCheckMoves(movesWithCapture, board, colour)
+    if (canCastleKingSide(occupancy, history, colour,board)) {
+        movesNoCheck.push(['CASTLE-KING'])
+    }
+    if (canCastleQueenSide(occupancy, history, colour,board)) {
+        movesNoCheck.push(['CASTLE-QUEEN'])
+    }
     return movesNoCheck
+}
+
+export function getMovesUCI(board,colour,history){
+    let occupancy = reduce(Array.from(board.values()), (x, y) => { return x | y }, 0n)
+    let oppColour = (colour == 'W') ? 'B' : 'W'
+    let PIECES = board.get(colour + 'P') | board.get(colour + 'N') | board.get(colour + 'B') | board.get(colour + 'R') | board.get(colour + 'Q') | board.get(colour + 'K')
+    let moves = getPieceMoves(board.get(colour + 'K'), occupancy, PIECES, (x, y) => kingMovesActual(y, getAttackBoard(oppColour, board, true), PIECES), "K")
+        .concat(getPieceMoves(board.get(colour + 'Q'), occupancy, PIECES, queenMoves, "Q"))
+        .concat(getPieceMoves(board.get(colour + 'N'), occupancy, PIECES, (x, y) => knightMoves(y), "N"))
+        .concat(getPieceMoves(board.get(colour + 'B'), occupancy, PIECES, bishopMoves, 'B'))
+        .concat(getPieceMoves(board.get(colour + 'R'), occupancy, PIECES, rookMoves, "R"))
+    let pawns = getPawnMoves(board, colour, history)
+    let movesFin = []
+    for (let i in moves) {
+        movesFin = movesFin.concat(convertMovesToList(moves[i][0], moves[i][1], moves[i][2]))
+    }
+    //need to set capture before finding no check moves in case scenario where capture to get out of check
+    let movesWithCapture = findCaptures(movesFin.concat(pawns), board, colour)
+    let movesNoCheck = findNoCheckMoves(movesWithCapture, board, colour)
+    if (canCastleKingSide(occupancy, history, colour,board)) {
+        movesNoCheck.push(['CASTLE-KING'])
+    }
+    if (canCastleQueenSide(occupancy, history, colour,board)) {
+        movesNoCheck.push(['CASTLE-QUEEN'])
+    }
+    let finalMoves = []
+    for (let move of movesNoCheck){
+        finalMoves.push(util.convertMoveToUCI(move,colour))
+    }
+    return finalMoves  
 }
 
 export function findCaptures(moves, board, colour) {
@@ -256,7 +292,7 @@ export function findCaptures(moves, board, colour) {
 export function findNoCheckMoves(moves, board: Map<string, bigint>, colour: string) {
     let movesNoCheck = []
     for (var move in moves) {
-        let boardState = game.makeMove(moves[move], colour, board)
+        let boardState = game.makeMoveUCI(util.convertMoveToUCI(moves[move],colour), board,colour)
         let c = check.isCheck(colour, boardState)
         if (!c) {
             movesNoCheck.push(moves[move])
@@ -285,8 +321,10 @@ export function getAttackBoard(colour: string, board: Map<string, bigint>, forKi
 }
 
 
-export function canCastleKingSide(occ: bigint, history, colour: string) {
+export function canCastleKingSide(occ: bigint, history, colour: string,board) {
     let rookPos = (colour == 'W') ? 7 : 63;
+    let oppColour = (colour == 'W') ? 'B' : 'W'
+
     let toMove = (colour == 'W') ? bsutil.setRange(0n, 5, 6, 1) : bsutil.setRange(0n, 61, 62, 1)
     let kingPos = (colour == 'W') ? 4 : 60;
     if (!(bsutil.get(occ, kingPos) && bsutil.get(occ, rookPos))) {
@@ -307,11 +345,17 @@ export function canCastleKingSide(occ: bigint, history, colour: string) {
     if ((occ & toMove) > 0) { //if any pieces between
         return false
     }
+    
+    if((getAttackBoard(oppColour,board,false) & toMove) > 0){
+        return false
+    }
     return true
 }
-export function canCastleQueenSide(occ: bigint, history, colour: string) {
+export function canCastleQueenSide(occ: bigint, history, colour: string,board) {
     let rookPos = (colour == 'W') ? 0 : 56;
     let kingPos = (colour == 'W') ? 4 : 60;
+    let oppColour = (colour == 'W') ? 'B' : 'W'
+
     if (!(bsutil.get(occ, kingPos) && bsutil.get(occ, rookPos))) {
         return false
     }
@@ -328,6 +372,9 @@ export function canCastleQueenSide(occ: bigint, history, colour: string) {
         return false
     }
     if ((occ & toMove) > 0) {
+        return false
+    }
+    if((getAttackBoard(oppColour,board,false) & toMove) > 0){
         return false
     }
     return true

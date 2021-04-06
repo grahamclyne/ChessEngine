@@ -16,10 +16,10 @@ var source = fs.readFileSync('./fib.wasm');
     
     suite.
       add('wasm', function() {
-        lib.fib(40);
+        lib.fib(50);
       }).
       add('js', function() {
-        fib(40);
+        fib(50);
       }).
       on('cycle', function(event) {
         console.log(String(event.target));

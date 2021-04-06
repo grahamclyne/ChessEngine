@@ -1,57 +1,31 @@
-import * as util from './util'
-import * as bsutil from './bitSetUtils'
-import * as game from './game'
-import * as moves from './moves'
-import * as check from './check'
-import * as tree from './tree'
-import { memoryUsage } from 'process'
-import * as search from './search'
-import { reduce } from 'lodash'
-import * as magic from './magic'
-import * as uci from './uci'
+import {startPositions} from './util'
+import {play} from './game'
+import {mapBoardState} from './search'
+import {init_sliders_attacks} from './magic'
 import { Logger } from "tslog";
 const log: Logger = new Logger({ name: "myLogger" });
+import {BOARD_STATES }from './search'
 
 
-
-let opponent = 'HUMAN'
 log.info("initializing slider attacks...")
-magic.init_sliders_attacks(true)
-magic.init_sliders_attacks(false)
+init_sliders_attacks(true)
+init_sliders_attacks(false)
 log.info("Done!")
-game.play(util.startPositions(), [], opponent)
+//play(startPositions(), [], 'opp')
+// let WP1 = bsutil.set(0n, 12, 1);
+// let BP1 = bsutil.set(0n, 27, 1);
+// let WP = [WP1, 'WP']
+// let BP = [BP1, 'BP']
+// let  BK = [bsutil.set(0n, 63, 1), "BK"]
+// let WK = [bsutil.set(0n,0,1), 'WK']
+var hrstart = process.hrtime()
+// //game.pickMoveUCI(util.newBoard(WP,BP,BK,WK),[],'W')
+mapBoardState(startPositions(),'B',2)
+mapBoardState(startPositions(),'W',2)
+console.log(BOARD_STATES)
+var hrend = process.hrtime(hrstart)
+console.info('Execution time (hr): %ds %dms', hrend[0], hrend[1] / 1000000)
 
-// //board = util.newBoard()
-// let level4_1 = {board:board, move:[], weight:10,children:[]}
-// let level4_2 = {board:board, move:[], weight:7,children:[]}
-// let level4_3 = {board:board, move:[], weight:8,children:[]}
-// let level4_4 = {board:board, move:[], weight:6,children:[]}
-// let level4_5 = {board:board, move:[], weight:5,children:[]}
-// let level4_6 = {board:board, move:[], weight:-11,children:[]}
-// let level4_7 = {board:board, move:[], weight:40,children:[]}
-// let level4_8 = {board:board, move:[], weight:12,children:[]}
-// let level3_1= {board:board, move:[], weight:5,children:[level4_1,level4_2]}
-// let level3_2= {board:board, move:[], weight:4,children:[level4_3,level4_4]}
-// let level3_3= {board:board, move:[], weight:5,children:[level4_5,level4_6]}
-// let level3_4= {board:board, move:[], weight:4,children:[level4_7,level4_8]}
-// let level2_1= {board:board, move:['zz'], weight:3,children:[level3_1,level3_2]}
-// let level2_2= {board:board, move:['yy'], weight:2,children:[level3_3,level3_4]}
-// let level1_1= {board:board, move:['xx'], weight:1,children:[level2_1,level2_2]}
-// //7
-// //7       5
-// //7   8   5     40 
-// //1 7 8 6 5 -11 40 12
-// //tree.bfs(treeN)
-// // let move = search.minimax(level1_1,3,true)
-// // console.log(move)
-// // let finMove = []
-// // level1_1.children.forEach(child => {
-// //     if (child.weight == move){
-// //         finMove = child.move
-// //     }
-// // })
-// // console.log(finMove)
-// // search.showAllChildren(level1_1,0)
 
 // //board = util.newBoard(WK,BK)
 // let root = {board:board,weight:0,move:[],children:[]}

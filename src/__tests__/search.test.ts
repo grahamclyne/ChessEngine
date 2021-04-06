@@ -1,6 +1,7 @@
 import * as search from '../search'
 import * as bsutil from '../bitSetUtils'
 import * as util from '../util'
+import { init_sliders_attacks } from '../magic'
 
 test('staticEvaluation: a king and two pawns', () => {
     let WP = [bsutil.set(0n, 1, 1), 'WP']
@@ -31,7 +32,7 @@ let level1_1= {board:board, move:[], weight:1,children:[level2_1,level2_2]}
 //7       5
 //7   8   5     40 
 //1 7 8 6 5 -11 40 12
-//tree.bfs(treeN)
-expect(search.minimax(level1_1,3,true)).toBe(7)
+// //tree.bfs(treeN)
+expect(search.minimax1alpha(level1_1,4,'B',Infinity,-Infinity,[])).toBe(7)
 
 })

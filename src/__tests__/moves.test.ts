@@ -62,8 +62,8 @@ test('pawn: white en passant capture', () => {
     let BP = [bsutil.set(0n, 37, 1), "BP"]
     let history = [[53, 37, 'P', 'N']]
     let board = util.newBoard(WP, BP);
-    board = game.makeMove([36,45,'P','EN','N'],'W',board)
-    expect(util.count_1s(board.get('BP'))).toBe(0n)
+    board = game.makeMoveUCI(util.convertMoveToUCI([36,45,'P','EN','N'],'W'),board,'W')
+    expect(util.count_1s(board.get('BP'))).toBe(0)
     expect(bsutil.get(board.get('WP'),45)).toBe(1)
 })
 
@@ -121,7 +121,7 @@ test('castling: black king side', () => {
     let board = util.newBoard(BK, BR)
     let occ = reduce( Array.from(board.values()),(x, y) => { return x | y }, 0n)
     let history = []
-    expect(moves.canCastleKingSide(occ,history,'B')).toBe(true)
+    expect(moves.canCastleKingSide(occ,history,'B',board)).toBe(true)
 
 })
 
@@ -133,7 +133,7 @@ test('castling: white queen side', () => {
     let board = util.newBoard(WR,WK)
     let history = []
     let occ = reduce( Array.from(board.values()),(x, y) => { return x | y }, 0n)
-    expect(moves.canCastleQueenSide(occ,history,'W')).toBe(true)
+    expect(moves.canCastleQueenSide(occ,history,'W',board)).toBe(true)
 })
 
 test('castling: rook already moved', () => {
@@ -144,7 +144,7 @@ test('castling: rook already moved', () => {
     let board = util.newBoard(WR,K)
     let history = [[0,1,'R','N']]
     let occ = reduce( Array.from(board.values()),(x, y) => { return x | y }, 0n)
-    expect(moves.canCastleQueenSide(occ,history,'W')).toBe(false)
+    expect(moves.canCastleQueenSide(occ,history,'W',board)).toBe(false)
 })
 
 test('castling: other rook already move, can still castle', () => {
@@ -156,8 +156,8 @@ test('castling: other rook already move, can still castle', () => {
     let board = util.newBoard(WR,K)
     let history = [[7,1,'R','N']]
     let occ = reduce(Array.from(board.values()),(x, y) => { return x | y }, 0n)
-    expect(moves.canCastleQueenSide(occ,history,'W')).toBe(true)
-    expect(moves.canCastleKingSide(occ,history,'W')).toBe(false)
+    expect(moves.canCastleQueenSide(occ,history,'W',board)).toBe(true)
+    expect(moves.canCastleKingSide(occ,history,'W',board)).toBe(false)
 })
 test('castling: king already moved', () => {
     let R1 = bsutil.set(0n, 0, 1)
@@ -168,8 +168,8 @@ test('castling: king already moved', () => {
     let board = util.newBoard(WR,K)
     let history = [[4,12,'K','N']]
     let occ = reduce( Array.from(board.values()),(x, y) => { return x | y }, 0n)
-    expect(moves.canCastleQueenSide(occ,history,'W')).toBe(false)
-    expect(moves.canCastleKingSide(occ,history,'W')).toBe(false)
+    expect(moves.canCastleQueenSide(occ,history,'W',board)).toBe(false)
+    expect(moves.canCastleKingSide(occ,history,'W',board)).toBe(false)
 })
 
 test('castling: piece in the way', () => {
@@ -182,7 +182,7 @@ test('castling: piece in the way', () => {
     let board = util.newBoard(WR,K,B)
     let history = []
     let occ = reduce( Array.from(board.values()),(x, y) => { return x | y }, 0n)
-    expect(moves.canCastleQueenSide(occ,history,'W')).toBe(false)
+    expect(moves.canCastleQueenSide(occ,history,'W',board)).toBe(false)
 })
 
 test('castling: white castles queenside', () => {
@@ -191,7 +191,7 @@ test('castling: white castles queenside', () => {
     let WR = [R1, 'WR']
     let K = [K1, 'WK']
     let board = util.newBoard(WR,K) 
-    board = game.makeMove(['CASTLE-QUEEN'],'W',board)
+    board = game.makeMoveUCI('e1c1',board,'W')
     expect(board.get('WK')).toBe(BigInt(0b100))
     expect(board.get('WR')).toBe(BigInt(0b1000))
 })
@@ -202,9 +202,27 @@ test('castling: black moves king side', () => {
     let WR = [R1, 'BR']
     let K = [K1, 'BK']
     let board = util.newBoard(WR,K) 
-    board = game.makeMove(['CASTLE-KING'],'B',board)
+    board = game.makeMoveUCI('e8g8',board,'B')
     expect(board.get('BK')).toBe(bsutil.pow(2n,62))
     expect(board.get('BR')).toBe(bsutil.pow(2n,61))
+})
+
+test('castling: through a check', () => {
+    let R1 = bsutil.set(0n, 63n, 1)
+    let K1 = bsutil.set(0n, 60n, 1)
+    let Q1 = bsutil.set(0n,26n,1)
+    let WR = [R1, 'BR']
+    let K = [K1, 'BK']
+    let Q = [Q1, 'WQ']
+    let board = util.newBoard(WR,K,Q) 
+    let move = moves.getMoves(board,'B',[])
+    console.log(move)
+    util.prettyPrintBoard(board)
+    let occ = reduce( Array.from(board.values()),(x, y) => { return x | y }, 0n)
+    bsutil.printBitSet(moves.getAttackBoard('W',board,false))
+    console.log(moves.canCastleKingSide(occ,[],'B',board))
+    expect(move).not.toContain('CASTLE-KING')
+    expect(move).not.toContain('CASTLE-QUEEN')
 })
 
 test('pawn promotion: 1 forward', () => {
@@ -212,9 +230,9 @@ test('pawn promotion: 1 forward', () => {
     let WQ = [bsutil.set(0n, 37, 1), "WQ"]
     let board = util.newBoard(WP, WQ);
     let move = [50, 58, 'P', 'P','']
-    let out  = game.makeMove(move, 'W',board)
-    expect(util.count_1s(out.get('WP'))).toBe(0n)
-    expect(util.count_1s(out.get('WQ'))).toBe(2n)
+    let out  = game.makeMoveUCI(util.convertMoveToUCI(move,'W'), board,'W')
+    expect(util.count_1s(out.get('WP'))).toBe(0)
+    expect(util.count_1s(out.get('WQ'))).toBe(2)
     expect(out.get('WQ')).toEqual(BigInt(Math.pow(2,58) + Math.pow(2,37)))
 })
 
@@ -276,7 +294,7 @@ test('findNoCheckMoves: contains no moves that jeopardize king', () => {
     let WP = [bsutil.set(0n,18,1), 'WP']
     let BR = [bsutil.set(0n,21,1), 'BR']
     let board = util.newBoard(WK,WP,BR)
-    let movelist = game.findMoves('W',[],board)
+    let movelist = moves.getMoves(board,'W',[])
     let movesNoCheck = moves.findNoCheckMoves(movelist,board,'W')
     expect(movesNoCheck.length).toBe(5)
 })

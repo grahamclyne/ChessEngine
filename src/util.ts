@@ -133,184 +133,6 @@ export function deepCloneMap(map) {
 	return out
 }
 
-//eg rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
-export function parseFEN(fenString: string) {
-	let fen = fenString.split(" ")
-	let piecePlacement = parseFENPosition(fen[0])
-	let colour = fen[1]
-	let castling = fen[2]
-	let passant = fen[3]
-	let halfmove = fen[4]
-	let fullmove = fen[5]
-	return piecePlacement
-}
-
-export function makeFEN(board: Map<string, bigint>, colour, history, halfMove, fullMove) {
-	//set board
-	let pieceMap = {
-		'WP': 'p',
-		'WN': 'n',
-		'WB': 'b',
-		'WR': 'r',
-		'WK': 'k',
-		'WQ': 'q',
-		'BP': 'P',
-		'BN': 'N',
-		'BB': 'B',
-		'BR': 'R',
-		'BK': 'K',
-		'BQ': 'Q'
-	}
-	let fenString = ''
-	let totalBoard = new Array(64).fill(0)
-	board.forEach((value, key) => {
-		for (let index = 0; index < 64; index++) {
-			if (get(value, index) == 1) {
-				totalBoard[index] = pieceMap[key]
-			}
-		}
-	})
-	let spaceCount = 0
-	totalBoard.forEach((val, index) => {
-
-		if (val == 0) {
-			spaceCount++
-		}
-		else {
-			if (spaceCount > 0) {
-				fenString = fenString + spaceCount
-				spaceCount = 0
-			}
-			fenString = fenString + val
-
-		}
-		if ((index + 1) % 8 == 0 && index > 0 && index < 63) {
-			if (spaceCount > 0) {
-				fenString = fenString + spaceCount
-				spaceCount = 0
-			}
-			fenString = fenString + '/'
-		}
-	})
-
-	//set colour
-	colour = (colour == 'W') ? 'w' : 'b'
-	fenString = fenString + " " + colour
-
-	//set castling
-	let castling = ''
-	let occ = getOccupancy(board)
-	let wq = moves.canCastleQueenSide(occ, history, 'W');
-	let wk = moves.canCastleKingSide(occ, history, 'W')
-	let bq = moves.canCastleQueenSide(occ, history, 'B')
-	let bk = moves.canCastleKingSide(occ, history, 'B')
-	if (wk == true) {
-		castling = castling + 'K'
-	}
-	if (wq == true) {
-		castling = castling + 'Q'
-	}
-	if (bk == true) {
-		castling = castling + 'k'
-	}
-	if (bq == true) {
-		castling = castling + 'q'
-	}
-	if (castling == '') {
-		castling = '-'
-	}
-	fenString = fenString + " " + castling
-	//set passant
-	let fileMap = {
-		1: 'a',
-		2: 'b',
-		3: 'c',
-		4: 'd',
-		5: 'e',
-		6: 'f',
-		7: 'g',
-		8: 'h'
-	}
-	let passant = '-'
-	let enpassant = (colour == 'W') ? function (a, b) { return a + b } : function (a, b) { return a - b }
-	let piecesToMove = board.get(colour + 'P')
-	let lastMove = history[history.length - 1]
-	if (lastMove != null && (lastMove[2] == 'P') && Math.abs(lastMove[1] - lastMove[0]) == 16) { //if last move was a pawn moving two sqs
-		if (get(piecesToMove, lastMove[1] + 1) == 1 || (get(piecesToMove, lastMove[1] - 1) == 1)) { //to the right if white, to the left if black
-			let rank = enpassant(lastMove[1], 8) / 8
-			let file = fileMap[enpassant(lastMove[1], 8) % 8]
-			enpassant = file + rank
-		}
-	}
-	fenString = fenString + " " + passant
-	//set halfmove
-	fenString = fenString + " " + halfMove
-	//set fullmove
-	fenString = fenString + " " + fullMove
-	return fenString
-}
-
-export function parseFENPosition(positions: string) {
-	//e.g. rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
-	let boardIndex = 0
-	let board = newBoard()
-	Array.from(positions).forEach((value, index) => {
-		if (value.match(/[0-9]/)) {
-			boardIndex = boardIndex + parseInt(value)
-		}
-		else if (value == '/') {
-			//skip so boardIndex not incremented
-		}
-		else {
-			switch (value) {
-				case 'r':
-					board.set('WR', set(board.get('WR'), boardIndex, 1))
-					break
-				case 'n':
-					board.set('WN', set(board.get('WN'), boardIndex, 1))
-					break
-				case 'b':
-					board.set('WB', set(board.get('WB'), boardIndex, 1))
-					break
-				case 'q':
-					board.set('WQ', set(board.get('WQ'), boardIndex, 1))
-					break
-				case 'k':
-					board.set('WK', set(board.get('WK'), boardIndex, 1))
-					break
-				case 'p':
-					board.set('WP', set(board.get('WP'), boardIndex, 1))
-					break
-				case 'R':
-					board.set('BR', set(board.get('BR'), boardIndex, 1))
-					break
-				case 'N':
-					board.set('BN', set(board.get('BN'), boardIndex, 1))
-					break
-				case 'B':
-					board.set('BB', set(board.get('BB'), boardIndex, 1))
-					break
-				case 'Q':
-					board.set('BQ', set(board.get('BQ'), boardIndex, 1))
-					break
-				case 'K':
-					board.set('BK', set(board.get('BK'), boardIndex, 1))
-					break
-				case 'P':
-					board.set('BP', set(board.get('BP'), boardIndex, 1))
-					break
-				default:
-					break
-
-			}
-			boardIndex++
-		}
-
-	})
-	return board
-}
-
-
 export const rankMasks: bigint[] = setRankMasks();
 export const fileMasks: bigint[] = setFileMasks();
 export const RANK_8: bigint = rankMasks[7];
@@ -362,7 +184,13 @@ export function startPositions() {
 
 }
 
-export function convertMoveToUCI(move){
+export function convertMoveToUCI(move,colour){
+	if(move[0] == 'CASTLE-QUEEN'){
+		return colour == 'B' ? 'e8c8' : 'e1c1';
+	}
+	else if(move[0] == 'CASTLE-KING'){
+		return colour == 'B' ? 'e8g8' : 'e1g1';
+	}	
 	let fileMap = {
 		0: 'a',
 		1: 'b',
@@ -375,7 +203,16 @@ export function convertMoveToUCI(move){
 	}
 	let startFile = fileMap[move[0] % 8]
 	let startRank = (Math.floor(move[0] / 8) + 1).toString()
+	if(move[0] == 0){
+		startRank = '1'
+	}
 	let endFile = fileMap[move[1] % 8]
 	let endRank = (Math.floor(move[1] / 8) + 1).toString()
+	if(move[1] == 0){
+		endRank = '1'
+	}
+	if(move[3] == 'P'){
+		return startFile + startRank + endFile + endRank + 'Q'
+	}
 	return startFile + startRank + endFile + endRank
 }

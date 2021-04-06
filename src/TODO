@@ -6,7 +6,7 @@ is it correct to assume for attack boards, we should only consider our own piece
 checkmate logic and turn logic both contain code to check if there is move to get out of check....
 capture logic test
 factor out en passant logic from pawn moves
-
+fix function parameters - try to be uniform
 
 NOTES TO SELF
 
@@ -21,62 +21,3 @@ two weeks until bug free random move games being played
 there is some seriously dubious logic going on with the magic bitboard --- need to convert a bigint to a number to set the index, which is outside js's range for a safe int. This needs to be remedied
 
 watch out for cirular imports
-
-
-
-Creating An Executable
-
-For this demo, we are going to use pkg command-line tool. You are free to choose nexe or other of your choice but I find pkg easier to use. First of all, we need to install pkg globally using npm command. You can also install it locally to use the CLI interface programmatically.
-
-$ npm install --global pkg
-
-(source: gist.github.com)
-
-Once the package is installed globally, you get the pkg command to create executables. The pkg command needs an input file which is an entry JavaScript program that will run when the user double-clicks on the generated executable file. Other command-line options control how the executable file is generated.
-Entry File
-
-The entry file path is provided through <input> argument such as the $ pkg [options] server.js command in our case which is a local file path. But we can also provide the path to package.json and the pkg command will use the bin property of the package.json to locate the path of the entry JavaScript file. If a directory path is provided, then the pkg command looks for the package.json file of that directory uses its bin property.
-Assets
-
-Assets are static resources such as .html, .js, .css, .png, .json files that should be included in the executable. To instruct pkg to include such files in the executable, we need to provide these file paths through pkg.assets property of the package.json. Its value is a glob pattern or an array of glob patterns.
-
-    💡 In this case, the package.json should be the input path so that pkg can pick assets that are needed to be included in the executable.
-
-When an executable is created, pkg will include the input JavaScript file along with static assets in a single executable file. This is where things get a little complicated. Since all project files are now packed into a single file, the relative file paths lose their meaning and so does the folder structure.
-
-But at runtime (when the executable is running), these files are organized into a virtual file system called a snapshot file system. Usually, these files at runtime have /snapshot/ (or C:\snapshot\ in windows) prefix in their path as if they are located inside /snapshot directory of the system.
-
-But you can safely locate an asset file in the executable (at runtime) using the path.join method and __dirname variable to construct a relative path such as path.join( __dirname, './www/main.js' ). The path will work just fine as if you have a real directory path in a real file system. To know more about the snapshot filesystem, read this documentation.
-
-    💡 Beware. During the compilation process, pkg looks at the require() statements in the code and automatically include these files as static assets. Therefore, you might not need to specify such files as static assets in the package.json. However, there are some caveats as explained here.
-
-Targets
-
-We can generate an executable file for a specific system using the --targets command-line flag. The value of this flag a string in the <node>-<platform>-<arch> format. It could also be a comma-separated list of this pattern to target multiple system architectures. You could also use the pkg.targets field of the package.json to specify these values.
-
-The node value is a target major version of the Node. The platform value is the name of the target operating system and it could be one of these freebsd, linux, alpine, macos, win. The arch is the target processor architecture and it could be one of these x64, x86, armv6, armv7.
-
-We could omit one of these values from the target specification. In that case, pkg uses its value from the current system configuration. We can use 'host' as the value for the --targets in which case all these values are obtained from the current system configuration.
-Output
-
-We will try to create executable files for the macOS and Windows operating systems, especially for x64 processor architecture. As our entry point is server.js, we will use bin property of the package.json to indicate its file path. Also, we will mention all file path inside node_modules and src as static assets since our server.js dependents on it. Considering all these requirements, our package.json looks like below.
-(source: gist.github.com)
-
-To generate the binary executable files, we need to execute pkg . command since we want pkg to use the package.json file from the current directory to locate the input file, assets, and targets. We could also use pkg package.json command which also does the same thing.
-
-Once this command is run, pkg downloads appropriate Node.js binaries based on the targets values and cache them in a directory specified by the PKG_CACHE_PATH environment variable so that next time when the same targets are encountered, pkg could use the cached binary files.
-
-Once all binary files are downloaded, pkg generates the executable files in the current directory. The filename and extension of these files is decided by pkg and normally looks like <package>-<target>.<ext> where package is the name value in the package.json.
-
-However, we can control the naming scheme and the output directory using the --output or --out-path option values. We are going to use --output flag to specify the output directory and name of the executable file.
-
-$ pkg --output build/web .
-
-The command above generates the following files inside build directory.
-
-node-js-executable
-└── build
-   ├── web-node10-win.exe (37.4mb)
-   └── web-node12-macos (43.4mb)
-
-Now you can double-click on any of these files (as per your machine) and it will open the browser in the default system browser with the webpage displaying the formula one drivers.

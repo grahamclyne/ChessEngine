@@ -1,13 +1,10 @@
-
-
 Chess Engine
 
 Uses magic bitboards for sliding moves - https://www.chessprogramming.org/Magic_Bitboards
 Uses minimax with alpha beta pruning for search - currently can search to depth 4 in a few seconds
 Uses UCI to interface with other chess engines - https://en.wikipedia.org/wiki/Universal_Chess_Interface
 
-
-So how do we decide how to map each chess board square to a bit in the 64-bit integer? This mapping could be arbitrary, but it behooves us to pick a mathematically advantageous mapping. In this particular mapping (or winding) we are going to say that position a1 is the least signficant bit (LSB), bit 0, of the 64 bit number and h8 is the most significant bit (MSB), bit 63. The squares will be assigned in a left to right, bottom to top ordering to each bit index in the 64 bit number from LSB to MSB.
+mapping to bitboard: 
 A8 	B8 	C8 	D8 	E8 	F8 	G8 	H8
 A7 	B7 	C7 	D7 	E7 	F7 	G7 	H7
 A6 	B6 	C6 	D6 	E6 	F6 	G6 	H6
@@ -26,6 +23,9 @@ A1 	B1 	C1 	D1 	E1 	F1 	G1 	H1
 8 	9 	10 	11 	12 	13 	14 	15
 0 	1 	2 	3 	4 	5 	6 	7
 
+npm install --global pkg
+
+
 
 To run:
 
@@ -33,8 +33,13 @@ Etiher use UCI and create and executable
 
 or
 
-tsc && node run
+tsc && node dist\main.js
 
 To test:
 
-    tsc && npx jest dist\__tests__\uci.test.js
+    tsc && npx jest moves.test.ts
+
+
+to make exe:
+
+pkg dist\uci.js

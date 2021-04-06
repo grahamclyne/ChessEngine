@@ -1,8 +1,7 @@
 import * as readline from 'readline';
 import * as bsutil from './bitSetUtils'
 import { Logger } from "tslog";
-import { generatePossibleMoves } from './moves';
-import { findMoves } from './game';
+import { getMoves } from './moves';
 const log: Logger = new Logger({ name: "myLogger" });
 
 export function isValidMove(move, board, colour) {
@@ -46,8 +45,7 @@ export function parseInput(colour, history, board) {
                 startSquare = parseInputSquare(startSquare)
                 endSquare = parseInputSquare(endSquare)
             }
-            let validMoves = findMoves(colour, history, board)
-            console.log(pieceName, startSquare, endSquare)
+            let validMoves = getMoves(board,colour,history)
 
             validMoves.forEach(move => {
                 if (move[0] == startSquare && move[1] == endSquare && pieceName == move[2]) {
