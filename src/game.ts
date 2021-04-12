@@ -19,9 +19,9 @@ const log: Logger = new Logger({ name: "myLogger" });
 
 
 
-export function pickMoveUCI(board:Map<string,bigint>, history, colour:string) {
+export async function pickMoveUCI(board:Map<string,bigint>, history, colour:string) {
     let root = { board: board, weight: 0, move: [], children: [] }
-    let mm = search.minimax1alpha(root, 2, colour, -Infinity, Infinity, history)
+    let mm =  await search.minimax1alpha(root, 3, colour, -Infinity, Infinity, history)
     let move = []
     mm.children.forEach(child => {
         if (child.weight == mm.weight) {
@@ -116,11 +116,13 @@ export async function play(board: Map<string, bigint>, history, opponent:string)
     let states = []
     while (true) {
         let hrstart = process.hrtime()
-        board = takeTurn(board, history, colour, states)
+        board = await takeTurn(board, history, colour, states)
         let hrend = process.hrtime(hrstart)
         log.info('Turn time (hr): %ds %dms', hrend[0], hrend[1] / 1000000)
         console.log(board)
-
+        let total = process.memoryUsage().heapTotal
+        let used = process.memoryUsage().heapUsed
+        log.info("HEAP USAGE: %d" ,used/total)
         colour = (colour == 'W') ? 'B' : 'W'
         if (checkEndGameConditions(board, states, history, colour)) break
         if (opponent == 'HUMAN') {
@@ -143,9 +145,9 @@ export async function play(board: Map<string, bigint>, history, opponent:string)
 
 
 //function with side effect (on state, and history object)
-export function takeTurn(board: Map<string, bigint>, history, colour:string, states:Array<BigInt>) {
+export async function takeTurn(board: Map<string, bigint>, history, colour:string, states:Array<BigInt>) {
     log.info(colour + ' TURN:')
-    let move = pickMoveUCI(board,history,colour)
+    let move = await pickMoveUCI(board,history,colour)
     log.info("Move chosen:", move)
     history.push(move)
     let newBoard = makeMoveUCI(move, board,colour)

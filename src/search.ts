@@ -8,6 +8,7 @@ import { reduce } from 'lodash'
 import * as util from './util'
 import { isCheckMate } from "./check"
 import {getMovesUCI} from './moves'
+
 export function staticEvaluation(board, mobility) {
     let score = count_1s(board.get('WP')) - count_1s(board.get('BP'))
     score = score + (3 * (count_1s(board.get('WN')) + count_1s(board.get('WB')) - (count_1s(board.get('BN')) + count_1s(board.get('BB')))))
@@ -18,38 +19,49 @@ export function staticEvaluation(board, mobility) {
     return score
 }
 
-export var BOARD_STATES = new Map();
 
-export function mapBoardState(board,colour:string,depth:number){
-    let moves = new Array();
-    console.log(board,depth)
-    let state = reduce(Array.from(board.values()), (x, y) => { return x + '' + y }, 0n)
-    if(BOARD_STATES.has(colour + state) ){
-        moves = BOARD_STATES.get(colour + state)
+
+// export function mapBoardState(board,colour:string,depth:number){
+//     let moves = new Array();
+//     let state = reduce(Array.from(board.values()), (x, y) => { return x + '' + y }, 0n)
+//     if(BOARD_STATES.has(colour + state) ){
+//         moves = BOARD_STATES.get(colour + state)
+//     }
+//     else{ 
+//         moves = getMovesUCI(board,colour,[])
+//         BOARD_STATES.set(colour + state, moves)
+//     }    
+//     if(depth == 0){
+//         return 
+//     }
+//     for(let move of moves){
+//         mapBoardState(game.makeMoveUCI(move,board,colour), colour,depth-1)
+//     }
+
+// }
+async function query(board,colour,history) {
+    let state = await reduce(Array.from(board.values()), (x, y) => { return x + '' + y }, 0n)
+    const MongoClient = await require('mongodb').MongoClient; 
+    const url = "mongodb://localhost:27017/"; 
+    const db = await MongoClient.connect(url);
+    const dbo = db.db("chess");
+    let moves = new Array()
+    const result = await dbo.collection("boards").find({board:colour+state}).toArray()
+    if(result.length == 0){
+        moves = await getMovesUCI(board,colour,history)
+        await dbo.collection("boards").insertOne({board:colour+state,moves:moves})
     }
-    else{ 
-        moves = getMovesUCI(board,colour,[])
-        BOARD_STATES.set(colour + state, moves)
-    }    
-    if(depth == 0){
-        return 
+    else{
+        moves = result[0]['moves']
     }
-    for(let move of moves){
-        mapBoardState(game.makeMoveUCI(move,board,colour), colour,depth-1)
-    }
+    return moves;
 }
 
-export function minimax1alpha(position, depth:number, colour:string, alpha:number,beta:number,history) {
-    
-    let moves = new Array();
-  //  let state = reduce(Array.from(position.board.values()), (x, y) => { return x | y }, 0n)
-    // if(BOARD_STATES.has(colour + state) ){
-    //     moves = BOARD_STATES.get(colour + state)
-    // }
-    // else{ 
-        moves = getMovesUCI(position.board,colour,history)
-    //     BOARD_STATES.set(colour + state, moves)
-    // }
+export async function minimax1alpha(position, depth:number, colour:string, alpha:number,beta:number,history) {
+    let moves = await query(position.board,colour,history);
+    let total = process.memoryUsage().heapTotal
+    let used = process.memoryUsage().heapUsed
+    console.log("HEAP USAGE: %d" ,used/total)
     let oppColour = (colour == 'W') ? 'B': 'W';
     let compareFunc = (colour == 'W') ? Math.max : Math.min;
     let evaluation = (colour == 'W') ? -Infinity : Infinity;
@@ -64,7 +76,7 @@ export function minimax1alpha(position, depth:number, colour:string, alpha:numbe
     for(let move of moves) {
         let tempBoard = game.makeMoveUCI(move,position.board,colour)
         let child = { board: tempBoard, weight: 0, move: move, children: [] }
-        let w = minimax1alpha(child, depth - 1, oppColour, alpha,beta, history)
+        let w = await minimax1alpha(child, depth - 1, oppColour, alpha,beta, history)
  
         if(colour == 'W'){
             evaluation = compareFunc(w.weight,evaluation)
@@ -82,5 +94,53 @@ export function minimax1alpha(position, depth:number, colour:string, alpha:numbe
     }
     return { board: position.board, weight: evaluation, move: position.move, children: position.children }
 }
+class Node {
+    V:number;
+    adj: [];
+    addEdge(v,w){
+        this.adj.append(w)
+    }
+}
 
+var TREE;
+export function searchnoheap(board,colour,depth){
+    TREE = new Map()
+    TREE = {board:board,weight:0, children:[]}
+    minimaxnoheap(colour,0,depth);
+}
 
+export function minimaxnoheap(colour,index,depth){
+    if(depth == 0){
+        return 
+    }
+    let children = TREE['children']
+    for(let child of children){
+        minimaxnoheap(colour,child['index'],depth-1)
+    }
+    
+}
+
+function bfs(tree) {
+    if (tree.children.length == 0) {
+        return;
+    }
+    tree.children.forEach(child => {
+        bfs(child);
+    });
+}
+function dfs(tree, max) {
+    //if leaf node
+    if (tree.children.length == 0) {
+        return tree.weight;
+    }
+    tree.children.forEach(child => {
+        let mmax = dfs(child, max);
+        if (mmax > max) {
+            max = mmax;
+        }
+    });
+    if (max > tree.weight) {
+        return max;
+    }
+    return tree.weight;
+}
