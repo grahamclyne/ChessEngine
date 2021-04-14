@@ -128,6 +128,7 @@ export function rookMoves(occ, sq) {
     occ &= magic.rMask(sq);
     occ *= magic.rook_magic_numbers[sq];
     occ >>= (64n - BigInt(magic.nRBits[Number(sq)]))
+    console.log(occ, ' ', sq)
     return BigInt(magic.rook_attacks[sq][Number(occ)])
     //return magic.rookAttacksOnTheFly(occ1, sq)
 }

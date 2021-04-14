@@ -1,19 +1,88 @@
 include("util.jl")
 include("magic.jl")
 include("game.jl")
-include("check.jl")
-function whatPieceWasThere(move)
+
+
+
+
+
+
+
+function initSlidersAttack(is_bishop,attacks)
+    for sq in 1:64
+        attack_mask = (is_bishop) ? bMask(sq) : rMask(sq)
+        relevant_bits_count = count_ones(attack_mask)
+        occupancy_indicies = (1 << relevant_bits_count)
+        for index in 1:occupancy_indicies
+            if(is_bishop)
+                occ = UInt128(setOcc(index,relevant_bits_count,attack_mask))
+                magic_index = (occ * bishop_magic_numbers[sq]) >> (64 - n_b_bits[sq])
+                bishop_attacks[sq][magic_index] = bishopAttacksOnTheFly(occ,sq)
+            else
+                occ = UInt128(setOcc(index,relevant_bits_count,attack_mask))
+                magic_index = (occ * rook_magic_numbers[sq]) >> (64 - n_r_bits[sq]) 
+                rook_attacks[sq][magic_index] = rookAttacksOnTheFly(occ,sq)
+
+            end
+        end
+    end
+    return attacks
 end
 
-function generatePossibleMoves(moves,f1,piece,type)
+
+
+bishop_attacks = Array{Dict}(undef,64)
+rook_attacks = Array{Dict}(undef,64)
+
+for i in 1:64
+    bishop_attacks[i] = Dict()
+    rook_attacks[i] = Dict()
+end
+
+bishop_attacks = initSlidersAttack(true,bishop_attacks)
+rook_attacks = initSlidersAttack(false,rook_attacks)
+
+
+function rookMoves(occ, sq)
+    #could use whole occupancy board,but would map to too many possibilties, following line gives us a reduced occupancy that is much more manageable
+    #use same magic number while instantiating rook_moves array as for rook_magic_numbers    
+    occ &= UInt128(rMask(sq))
+    occ *= rook_magic_numbers[sq] 
+    occ >>= (64 - n_r_bits[sq])
+    return rook_attacks[sq][occ]
+    # return rookAttacksOnTheFly(occ,sq)
+    end
+    
+    function bishopMoves(occ,sq)
+        # return bishopAttacksOnTheFly(occ,sq)
+        occ &= UInt128(bMask(sq))
+        occ *= bishop_magic_numbers[sq]
+        occ >>= (64 - n_b_bits[sq])
+        if(occ in keys(bishop_attacks[sq]))
+            return bishop_attacks[sq][occ]
+        else
+            return bishopAttacksOnTheFly(occ,sq)
+        end
+     
+    end
+    
+
+
+function generatePossibleMoves(moves,f1,type)
     possible_moves = []
     for index in 1:64
         el = getBit(moves,index)
         if(el == 1)
             start = f1(index) 
-            push!(possible_moves, BBToUCI(start,index))
+            if(type == 'P')
+                push!(possible_moves, BBToUCI(start,index) * 'Q')
+            else
+                push!(possible_moves, BBToUCI(start,index))
+            end
         end
     end
+
+
     return possible_moves
 end
 
@@ -36,16 +105,14 @@ function getPawnMoves(board,colour::Char,history)
     if(length(history) > 0)
         last_move = history[length(history)]
         start_index, end_index = UCIToBB(last_move)
-
     else
         last_move = missing 
         start_index, end_index = 0,0
     end
-    
-    if (ismissing(last_move) && (whatPieceWasThere(last_move) == 'P') && abs(end_index - start_index) == 16) #if last move was a pawn moving two sqs
-        if (getBit(piecesToMove, end_index + 1) == 1)  #to the right if white, to the left if black
+    if (~ismissing(last_move) && (getBit(board[opp_colour * 'P'],end_index) == 1) && abs(end_index - start_index) == 16) #if last move was a pawn moving two sqs
+        if (getBit(pieces_to_move, end_index + 1) == 1)  #to the right if white, to the left if black
             push!(possible_moves,BBToUCI(end_index + 1, en_passant(end_index, 8)))
-        elseif (getBit(piecesToMove, end_index - 1) == 1) 
+        elseif (getBit(pieces_to_move, end_index - 1) == 1) 
             push!(possible_moves,BBToUCI(end_index- 1, en_passant(end_index, 8)))
         end
     end
@@ -53,31 +120,31 @@ function getPawnMoves(board,colour::Char,history)
     #capture right
     moves_right = shift_function(pieces_to_move, 7) & opposing_pieces & (~last_rank) & (~right_side)
     f1 = num -> operator(num,7)    
-    possible_moves = append!(possible_moves, generatePossibleMoves(moves_right,f1,'P','N'))
+    possible_moves = append!(possible_moves, generatePossibleMoves(moves_right,f1,'N'))
     #capture left
     cap_left = shift_function(pieces_to_move, 9) & opposing_pieces & ~last_rank & ~left_side
     f1 = num -> operator(num,9)
-    possible_moves = append!(possible_moves,generatePossibleMoves(cap_left, f1,'P', 'N'))
+    possible_moves = append!(possible_moves,generatePossibleMoves(cap_left, f1, 'N'))
     #1 forward
     one_forward = shift_function(pieces_to_move, 8) & empty & ~(last_rank)
     f1 = num -> operator(num, 8)
-    possible_moves = append!(possible_moves,generatePossibleMoves(one_forward,f1,'P','N'))
+    possible_moves = append!(possible_moves,generatePossibleMoves(one_forward,f1,'N'))
     #2 forward
     two_forward = shift_function(pieces_to_move, 16) & (empty) & shift_function(empty,8) & two_forward
     f1 = num -> operator(num,16)
-    possible_moves = append!(possible_moves,generatePossibleMoves(two_forward, f1,'P', 'N'))
+    possible_moves = append!(possible_moves,generatePossibleMoves(two_forward, f1,'N'))
     #pawn promotion by capture right
     promo_right = shift_function(pieces_to_move, 7) & (opposing_pieces) & last_rank & ~right_side
     f1 = num -> operator(num, 7)
-    possible_moves = append!(possible_moves,generatePossibleMoves(promo_right, f1,  'P', 'P')) 
+    possible_moves = append!(possible_moves,generatePossibleMoves(promo_right, f1,  'P')) 
     #pawn promotion by 1 forward
     promo_forward = shift_function(pieces_to_move, 8) & empty & last_rank
     f1 = num -> operator(num, 8)
-    possible_moves = append!(possible_moves,generatePossibleMoves(promo_forward, f1, 'P', 'P'))
+    possible_moves = append!(possible_moves,generatePossibleMoves(promo_forward, f1,  'P'))
     #pawn promotion by capture left
     promo_cap_left = shift_function(pieces_to_move, 9) & opposing_pieces & last_rank & ~left_side
     f1 = num -> operator(num, 9)
-    possible_moves = append!(possible_moves,generatePossibleMoves(promo_cap_left, f1, 'P', 'P'))
+    possible_moves = append!(possible_moves,generatePossibleMoves(promo_cap_left, f1,  'P'))
     return possible_moves
 end
 
@@ -91,25 +158,6 @@ function pawnAttacks(pawn_board,colour)
         attacks |= (pawn_board >> 9) & ~FILE_MASKS[8]
     end
     return [[attacks, 0, "P"]]
-end
-
-function rookMoves(occ, sq)
-#could use whole occupancy board,but would map to too many possibilties, following line gives us a reduced occupancy that is much more manageable
-#use same magic number while instantiating rook_moves array as for rook_magic_numbers
-    # occ1 = occ
-    # occ &= rMask(sq)
-    # occ *= rook_magic_numbers[sq]
-    # occ >>= (64 - n_r_bits[sq])
-    # return rook_attacks[sq][occ]
-    return rookAttacksOnTheFly(occ,sq)
-end
-
-function bishopMoves(occ,sq)
-    return bishopAttacksOnTheFly(occ,sq)
-    # occ &= bMask(sq)
-    # occ *= bishop_magic_numbers[sq]
-    # occ >>= (64 - n_b_bits[sq])
-    # return bishop_attacks[sq+1][occ+1]
 end
 
 
@@ -128,10 +176,7 @@ function knightMoves(sq)
 end
 
 function queenMoves(occ,sq)
-    # occ &= rMask(sq)
-    # occ *= magic_r[sq]
-    # occ >>= (64 - n_r_bits[sq])
-    return bishopAttacksOnTheFly(occ,sq) | rookAttacksOnTheFly(occ,sq)
+    return bishopMoves(occ,sq) | rookMoves(occ,sq)
 end
 
 function kingMoves(sq)
@@ -153,26 +198,24 @@ function kingMovesActual(sq,attack_board,pieces)
 end
 
 function getPieceMoves(board,occ,pieces,f,piece_name)
-    if(board == 0)
+    if(board == 0) #none of this type of piece exist
         return []
     end
     piece_1 = mostSignificantBit(board) 
-    piece_2 = leastSignificantBit(board)
-    if(piece_1 == piece_2)
+    piece_2 = leastSignificantBit(board) + 1
+    if((piece_1 == piece_2) )
         return [[f(occ,piece_1) & ~pieces,piece_1,piece_name]]
     else
         return [[f(occ,piece_1) & ~pieces, piece_1, piece_name],[f(occ,piece_2) & ~pieces, piece_2, piece_name]]
     end
 end
 
-function covertMovesToList(board,piece,piece_name)
-    return generatePossibleMoves(board, piece, piece_name, 'N')
-end
+
 
 
 
 #outward facing call to games.jl
-function getMovesUCI(board,colour,history)
+function getMovesUCI(board,colour,history,is_check)
     occ = reduce((x,y) -> x | y, values(board))
     opp_colour = (colour == 'W') ? 'B' : 'W'
     pieces =  board[colour * 'P'] | board[colour * 'N'] | board[colour * 'B'] | board[colour * 'R'] | board[colour * 'Q'] | board[colour * 'K']
@@ -183,37 +226,38 @@ function getMovesUCI(board,colour,history)
         getPieceMoves(board[colour * 'B'],occ,pieces,bishopMoves,'B'),
         getPieceMoves(board[colour * 'R'],occ,pieces,rookMoves,'R')
         )
+
     moves_fin = []
     for i in 1:length(moves)
-        moves_fin = append!(moves_fin, convertMovesToList(moves[i][1], moves[i][2], moves[i][3]))
+        moves_fin = append!(moves_fin, generatePossibleMoves(moves[i][1], x -> moves[i][2], 'N'))
     end
     moves_fin = append!(moves_fin,getPawnMoves(board,colour,history))
-    moves_no_check = findNoCheckMoves(moves_fin,board,colour)
-    moves_with_castle = append!(castleMoves(occ,history,colour,board),moves_no_check)
+    if(is_check)
+        moves_fin = findNoCheckMoves(moves_fin,board,colour)
+    end
+    moves_with_castle = append!(castleMoves(board,colour,history,occ),moves_fin)
     return moves_with_castle
 end
 
-function convertMovesToList(board, piece, pieceName) 
-    return generatePossibleMoves(board, x -> piece, pieceName, "N")
-end
 
 function findNoCheckMoves(moves,board,colour)
     moves_no_check = []
     for move in moves
         board_state = makeMoveUCI(move,board,colour)
-        c = isCheck(colour,board_state)
+        c = isCheck(board_state,colour)
         if(~c)
             push!(moves_no_check,move)
         end
     end
-    return moves
+    return moves_no_check
 end
+
 
 function getAttackBoard(colour,board,for_king)
     occ = reduce((x,y) -> x | y,values(board))
     opp_colour = (colour == 'W') ? 'B' : 'W'
-    occ = (for_king) ? occ &= ~board[opp_colour * 'K'] : occ
-    pieces = 0
+    occ = (for_king) ? occ &= ~(board[opp_colour * 'K']) : occ
+    pieces =  board[colour * 'P'] | board[colour * 'N'] | board[colour * 'B'] | board[colour * 'R'] | board[colour * 'Q'] | board[colour * 'K']
     moves = append!(
         getPieceMoves(board[colour * 'K'],occ,pieces,(x,y) -> kingMoves(y), 'K'),
         getPieceMoves(board[colour * 'Q'],occ,pieces,queenMoves,'Q'),
@@ -223,39 +267,68 @@ function getAttackBoard(colour,board,for_king)
         pawnAttacks(board[colour * 'P'],colour)
         )
     moves = map(x -> x[1], moves)
-
     return reduce((x,y) -> x|y, moves)
 end
 
-function castleMoves(occ,history,colour,board)
+
+function castleMoves(board,colour,history,occ)
     moves = []
-    rook_pos = (colour == 'W') ? 7 : 63
+    rook_pos = (colour == 'W') ? 8 : 64
     opp_colour = (colour == 'W') ? 'B' : 'W'
     to_move = (colour == 'W') ? setBitRange(0,6,7) : setBitRange(0,62,63)  
-    king_pos = (colour == 'W') ? 4 : 60 
+    king_pos = (colour == 'W') ? 5 : 61
     piece_moved = false
-
-    #kingside
     for move in history
-        if(whatPieceWasThere(move) == 'K' || whatPieceWasThere(move) == 'R') #make sure it is correct piece
+        start_index, end_index = UCIToBB(move)
+        if(getBit(board[colour * 'K'],end_index) == 1 || getBit(board[colour * 'R'],end_index) == 1) #make sure it is correct piece
             piece_moved = true
         end
     end
 
+    #kingside
     if(getBit(occ,king_pos) > 0  && getBit(occ,rook_pos) > 0 && ~piece_moved && (occ & to_move) == 0 && (getAttackBoard(opp_colour,board,false) & to_move) == 0)
          #if both king and rook exist, no pieces between, no challenged squares, no piece has moved
          (colour == 'W') ? push!(moves,"e1g1") : push!(moves,"e8g8")
-    #     if (history.includes(false)) {
-#         return false
-#     }
     end
 
     #queenside
     rook_pos = (colour == 'W') ? 1 : 57
-    king_pos = (colour == 'W') ? 4 : 60
     to_move = (colour == 'W') ? setBitRange(0,2,4) : setBitRange(0,58,60)
     if(getBit(occ,king_pos) > 0 && getBit(occ,rook_pos) > 0 && ~piece_moved && (occ & to_move) == 0 && (getAttackBoard(opp_colour,board,false) & to_move) == 0)
         colour == 'W' ? push!(moves,"e1c1") : push!(moves,"e8c8")
     end
     return moves
+end
+
+
+
+
+
+function isCheck(board,colour)
+    king = board[colour * 'K']
+    opp_colour = (colour == 'W') ? 'B' : 'W'
+    attack = getAttackBoard(opp_colour,board,true)
+    return ((king & attack) > 0) ? true : false
+    return false
+end
+
+function isCheckMate(board,colour,history)
+    check = isCheck(board,colour)
+    legal_moves = getMovesUCI(board,colour,history,true)
+    while(check && length(legal_moves) > 0)
+        move = legal_moves[1]
+        board_state = makeMoveUCI(move,board,colour)
+        if(!isCheck(board_state,colour))
+            check = false
+        else
+            popfirst!(legal_moves)
+        end
+    end
+    if(length(legal_moves) == 0 && check)
+        return 1
+    elseif (length(legal_moves) == 0 && ~check) #stalemate
+        return 2
+    else
+        return 0
+    end
 end

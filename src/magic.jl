@@ -1,9 +1,13 @@
 function bishopAttacksOnTheFly(occ,sq)
+    if(sq < 1 || sq > 65)
+        return false
+    end
     attacks = UInt64(0)
-    piece_rank = floor(Int64,sq / 8) 
+    piece_rank = (sq == 0) ? 0 : ceil(Int64,sq / 8 - 1)
     piece_file = (sq % 8) - 1
     piece_file = ((sq % 8) == 0) ? 7 : piece_file
     piece_rank = (piece_rank == 8) ? 7 : piece_rank
+    
     rank = piece_rank + 1
     file = piece_file + 1
     while(rank < 8 && file < 8)
@@ -44,6 +48,9 @@ end
 
 
 function rookAttacksOnTheFly(occ,sq)
+    if(sq < 1)
+        return false
+    end
     attacks = UInt64(0)
     piece_rank = ceil(Int64,sq / 8 - 1) 
     piece_file = (sq % 8) - 1
@@ -103,15 +110,17 @@ n_b_bits = [
 ]
 
 function rMask(sq)
+
     result = 0
-    rank = ceil(Int64,sq / 8)
-    file = sq % 8 
+    rank = ceil(Int64,sq / 8 - 1)
+    file = sq % 8 - 1
+    file = ((sq % 8 ) == 0) ? 7 : file
+    rank = rank == 8 ? 7 : rank
     for index in rank+1:6
         result |= (1 << (file + (index * 8)))
     end
-
     index = rank - 1
-    while index > 1
+    while index >= 1
         result |= (1 << (file + (index * 8)))
         index = index - 1
     end
@@ -121,7 +130,7 @@ function rMask(sq)
     end
 
     index = file - 1
-    while index > 1
+    while index >= 1 && index <= 64
         result |= (1 << (index + (rank * 8)))
         index = index - 1
     end
@@ -132,13 +141,14 @@ end
 
 function bMask(sq)
     result = 0
-    rank = ceil(Int64,sq / 8)
-    file = sq % 8 
-    x_index = 0
+    rank = ceil(Int64,sq / 8 - 1)
+    file = sq % 8 - 1
+    file = ((sq % 8) == 0) ? 7 : file
+    rank = (rank == 8) ? 7 : rank
     
     r = rank + 1
     f = file + 1
-    while(r <= 7 && f <= 7)
+    while(r < 7 && f < 7)
         result |= (1 << (f + (r * 8)))
         r = r + 1
         f = f + 1
@@ -146,7 +156,7 @@ function bMask(sq)
 
     r = rank + 1
     f = file - 1
-    while(r <= 7 && f > 1)
+    while(r < 7 && f >= 1)
         result |= (1 << (f + (r * 8)))
         r = r + 1
         f = f - 1
@@ -154,7 +164,7 @@ function bMask(sq)
 
     r = rank - 1
     f = file + 1
-    while(r > 1 && f <= 7)
+    while(r >= 1 && f < 7)
         result |= (1 << (f + (r * 8)))
         r = r - 1
         f = f + 1
@@ -320,36 +330,17 @@ function popBit(board,sq)
 end
 
 function setOcc(index,bits_in_mask,attack_mask)
+   # println(index, ' ',bits_in_mask, ' ', attack_mask)
     occ = 0
-    for count in 1:bits_in_mask
+    for count in 0:bits_in_mask-1
         square = leastSignificantBit(attack_mask)
-        attack_mask = popBit(attack_mask,sqaure)
-        if(index & (1 << count))
-            occ |= (1 << sq)
+        attack_mask = popBit(attack_mask,square)
+        if((index & (1 << count)) > 0)
+            occ |= (1 << square)
         end
+     #   println(count, ' ', square, ' ', attack_mask)
     end
     return occ
 end
 
 
-function initSlidersAttack(is_bishop, bishop_attacks,rook_attacks)
-    for sq in 1:64
-        attack_mask = is_bishop ? bMask(sq) : rMask(sq)
-        relevant_bits_count = count_ones(attack_mask)
-        occupancy_indicies = (1 << relevant_bits_count)
-        for index in 1:occupancy_indicies
-            if (is_bishop)
-                occ = setOcc(index,relevant_bits_count,attack_mask)
-                magic_index = (occ * bishop_magic_numbers[square]) >> (64 - n_b_bits[sq])
-                bishop_attacks[sq][magic_index] = bishopAttacksOnTheFly(occ,sq)
-            else
-                occ = setOcc(index,relevant_bits_count,attack_mask)
-                magic_index = (occ * rook_magic_numbers[square]) >> (64 - n_r_bits[sq])
-                bishop_attacks[sq][magic_index] = rookAttacksOnTheFly(occ,sq)
-            end
-
-
-        end
-    end
-    return bishop_attacks,rook_attacks
-end

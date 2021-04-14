@@ -94,13 +94,13 @@ export async function minimax1alpha(position, depth:number, colour:string, alpha
     }
     return { board: position.board, weight: evaluation, move: position.move, children: position.children }
 }
-class Node {
-    V:number;
-    adj: [];
-    addEdge(v,w){
-        this.adj.append(w)
-    }
-}
+// class Node {
+//     V:number;
+//     adj: [];
+//     addEdge(v,w){
+//         this.adj.append(w)
+//     }
+// }
 
 var TREE;
 export function searchnoheap(board,colour,depth){

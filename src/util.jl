@@ -1,12 +1,18 @@
-leastSignificantBit(n) = trailing_zeros(n) + 1
 mostSignificantBit(n) = 8 * sizeof(n) - leading_zeros(n) 
 RANK_MASKS = [255,65280,16711680,4278190080,1095216660480,280375465082880,71776119061217280,18374686479671623680]
 FILE_MASKS = [72340172838076673,144680345676153346,289360691352306692,578721382704613384,1157442765409226768,2314885530818453536,4629771061636907072,9259542123273814144]
 
 
+function leastSignificantBit(n)
+    if(n == 0)
+        return 0
+    end
+    return UInt64(log2(n & (-n)))
+end
 function getBit(N, m)
     return digits(N,base=2,pad=64)[m] 
 end
+
 
 function UCIToBB(move)
     letter_to_num = Dict('a'=>1,'b'=>2,'c'=>3,'d'=>4,'e'=>5,'f'=>6,'g'=>7,'h'=>8)
@@ -14,6 +20,7 @@ function UCIToBB(move)
     end_index = letter_to_num[move[3]] + ((parse(Int,move[4]) - 1) * 8)
     return start_index,end_index
 end
+
 
 function setBitRange(num, start_index,end_index)
     n = digits(num,base=2,pad=64)
@@ -25,11 +32,14 @@ function setBitRange(num, start_index,end_index)
     return parse(UInt64,n,base=2)
 end
 
+
 function setBit(num,index,value)
     n = digits(num,base=2,pad=64)
     n[index] = value
     return parse(UInt64,join(reverse(n)),base=2)
 end
+
+
 function BBToUCI(start_index, end_index)
     # println(start_index, ' ', end_index )
     m = Dict(1=>'a',2=>'b',3=>'c',4=>'d',5=>'e',6=>'f',7=>'g',8=>'h')
@@ -41,7 +51,6 @@ function BBToUCI(start_index, end_index)
     end_rank = ceil(Int64,end_index / 8)
     return start_file * string(start_rank) * end_file * string(end_rank) 
 end
-
 
 
 function printBB(board)
@@ -59,7 +68,7 @@ end
 function prettyPrintBoard(board::Dict)
     #piece_map = Dict("BP"=>"♙", "BN"=>"♘", "BB"=>"♗", "BR"=>"♖", "BQ"=>"♕", "BK"=>"♔", "WP"=>"♟︎", "WN"=>"♞", "WB"=>"♝", "WR"=>"♜", "WQ"=>"♛", "WK"=>"♚")
     output = Array{String}(undef,64)
-    files = [8,7,6,5,4,3,2,1]
+    files = [1,2,3,4,5,6,7,8]
     ranks = ["A  ", "B  ", "C  ", "D  ", "E  ", "F  ", "G  ", "H  \n"]
     for index in 1:64
         output[index] = "-- "
@@ -94,6 +103,22 @@ function prettyPrintBoard(board::Dict)
 
 end
 
+function emptyPositions()
+    board = Dict()
+    board["WP"] = 0
+    board["WR"] = 0
+    board["WN"] = 0
+    board["WB"] = 0
+    board["WQ"] = 0
+    board["WK"] = 0
+    board["BP"] = 0
+    board["BB"] = 0
+    board["BN"] = 0
+    board["BR"] = 0
+    board["BQ"] = 0
+    board["BK"] = 0
+    return board
+end
 
 function startPositions()
     board = Dict()
