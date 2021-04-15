@@ -10,7 +10,7 @@ function leastSignificantBit(n)
     return UInt64(log2(n & (-n)))
 end
 function getBit(N, m)
-    return digits(N,base=2,pad=64)[m] 
+    return (N >> (m - 1)) & 1
 end
 
 
@@ -23,20 +23,24 @@ end
 
 
 function setBitRange(num, start_index,end_index)
-    n = digits(num,base=2,pad=64)
+    n = num
     for i in start_index:end_index
-        n[i] = 1
+        n = n | (1 << (i - 1))
     end
-    n = reverse(n)
-    n = join(n)
-    return parse(UInt64,n,base=2)
+    return n
 end
 
 
-function setBit(num,index,value)
-    n = digits(num,base=2,pad=64)
-    n[index] = value
-    return parse(UInt64,join(reverse(n)),base=2)
+function setBit(N,index,value)
+  #  n = digits(num,base=2,pad=64)
+  #  n[index] = value
+  N = UInt64(N)
+  if(value == 1)
+    return  N | (1 << (index - 1))
+  else
+    return N & ~(1 << (index - 1))
+  end
+    #  return parse(UInt64,join(reverse(n)),base=2)
 end
 
 
@@ -46,16 +50,16 @@ function BBToUCI(start_index, end_index)
     start_file = (start_index % 8 == 0) ? 8 : start_index % 8
     end_file = (end_index % 8 == 0) ? 8 : end_index % 8 
     start_file = m[start_file]
-    start_rank = ceil(Int64,start_index / 8)
+    start_rank = ceil(UInt64,start_index / 8)
     end_file = m[end_file] 
-    end_rank = ceil(Int64,end_index / 8)
+    end_rank = ceil(UInt64,end_index / 8)
     return start_file * string(start_rank) * end_file * string(end_rank) 
 end
 
 
 function printBB(board)
     for i in 1:64
-        if((i-1) % 8 == 0 && i > 1)
+        if((i-1) % 8 === 0 && i > 1)
             print(' ', i-1 ,  '\n')
         end
         print(getBit(board,i))
@@ -75,11 +79,11 @@ function prettyPrintBoard(board::Dict)
     end
     file_count = 0
     for key in keys(board)
-        bit_board = board[key]
+        bit_board = Int128(board[key])
         m = digits(bit_board,base=2,pad=64)
         for i in 1:64
-            if(m[i] == 1)
-                if(key[1] == 'W')
+            if(m[i] === 1)
+                if(key[1] === 'W')
                     output[i] = "\x1b[93m" * key * "\x1b[39m "
                 else
                     output[i] = "\x1b[91m" * key * "\x1b[39m "
@@ -94,8 +98,8 @@ function prettyPrintBoard(board::Dict)
 
         print(output[i])
 
-        if(i % 8 == 0 && i != 0)
-            print(files[ceil(Int64,i / 8)], '\n')
+        if(i % 8 === 0 && i !== 0)
+            print(files[ceil(UInt64,i / 8)], '\n')
 
         end
     end
@@ -123,16 +127,16 @@ end
 function startPositions()
     board = Dict()
     board["WP"] = setBitRange(0,9,16)
-    board["WR"] = setBitRange(0,1,1) | setBitRange(0,8,8)
-    board["WN"] = setBitRange(0,2,2) | setBitRange(0,7,7)
-    board["WB"] = setBitRange(0,3,3) | setBitRange(0,6,6)
-    board["WQ"] = setBitRange(0,5,5)
-    board["WK"] = setBitRange(0,4,4)
+    board["WR"] = setBit(0,1,1) | setBit(0,8,1)
+    board["WN"] = setBit(0,2,1) | setBit(0,7,1)
+    board["WB"] = setBit(0,3,1) | setBit(0,6,1)
+    board["WQ"] = setBit(0,5,1)
+    board["WK"] = setBit(0,4,1)
     board["BP"] = setBitRange(0,49,56)
-    board["BB"] = setBitRange(0,62,62) | setBitRange(0,59,59)
-    board["BN"] = setBitRange(0,63,63) | setBitRange(0,58,58)
-    board["BR"] = setBitRange(0,64,64) | setBitRange(0,57,57)
-    board["BQ"] = setBitRange(0,61,61)
-    board["BK"] = setBitRange(0,60,60)
+    board["BB"] = setBit(0,62,1) | setBit(0,59,1)
+    board["BN"] = setBit(0,63,1) | setBit(0,58,1)
+    board["BR"] = setBit(0,64,1) | setBit(0,57,1)
+    board["BQ"] = setBit(0,61,1)
+    board["BK"] = setBit(0,60,1)
     return board
 end

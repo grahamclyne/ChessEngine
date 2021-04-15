@@ -5,23 +5,25 @@ include("game.jl")
 
 
 
-
-
-
-function initSlidersAttack(is_bishop,attacks)
+function initSlidersAttack(is_bishop)
+    attacks = Array{Dict}(undef,64)
+    for i in 1:64
+        attacks[i] = Dict()
+    end
+    println("INITIALIZING SLIDER MOVES",is_bishop)
     for sq in 1:64
         attack_mask = (is_bishop) ? bMask(sq) : rMask(sq)
         relevant_bits_count = count_ones(attack_mask)
         occupancy_indicies = (1 << relevant_bits_count)
-        for index in 1:occupancy_indicies
+        for index in 0:occupancy_indicies-1
             if(is_bishop)
                 occ = UInt128(setOcc(index,relevant_bits_count,attack_mask))
                 magic_index = (occ * bishop_magic_numbers[sq]) >> (64 - n_b_bits[sq])
-                bishop_attacks[sq][magic_index] = bishopAttacksOnTheFly(occ,sq)
+                attacks[sq][magic_index] = bishopAttacksOnTheFly(occ,sq)
             else
                 occ = UInt128(setOcc(index,relevant_bits_count,attack_mask))
                 magic_index = (occ * rook_magic_numbers[sq]) >> (64 - n_r_bits[sq]) 
-                rook_attacks[sq][magic_index] = rookAttacksOnTheFly(occ,sq)
+                attacks[sq][magic_index] = rookAttacksOnTheFly(occ,sq)
 
             end
         end
@@ -31,16 +33,6 @@ end
 
 
 
-bishop_attacks = Array{Dict}(undef,64)
-rook_attacks = Array{Dict}(undef,64)
-
-for i in 1:64
-    bishop_attacks[i] = Dict()
-    rook_attacks[i] = Dict()
-end
-
-bishop_attacks = initSlidersAttack(true,bishop_attacks)
-rook_attacks = initSlidersAttack(false,rook_attacks)
 
 
 function rookMoves(occ, sq)
@@ -53,19 +45,32 @@ function rookMoves(occ, sq)
     # return rookAttacksOnTheFly(occ,sq)
     end
     
-    function bishopMoves(occ,sq)
-        # return bishopAttacksOnTheFly(occ,sq)
-        occ &= UInt128(bMask(sq))
-        occ *= bishop_magic_numbers[sq]
-        occ >>= (64 - n_b_bits[sq])
-        if(occ in keys(bishop_attacks[sq]))
-            return bishop_attacks[sq][occ]
-        else
-            return bishopAttacksOnTheFly(occ,sq)
-        end
-     
-    end
+function bishopMoves(occ,sq)
+    sq = Int(sq) #i dont know why this is necessary, when sq = 41, some error comes up? 
+    occ &= UInt128(bMask(sq))
+    occ *= bishop_magic_numbers[sq]
+    occ >>= (64 - n_b_bits[sq])
+  #  if(occ in keys(bishop_attacks[sq]))
+        return bishop_attacks[sq][occ]
+   # else        
+        # printBB(occ)
+        # println("key: ",occ)
+        # printBB(temp_occ)
+        # println(temp_occ)
+        # println(temp_occ & UInt128(bMask(sq)))
+    #     println("BMASK")
+    #     println(sq)
+    #     printBB(bMask(sq))
+    #     println(bMask(sq))
+    #     println(bMask(41))
+    #     # println(sq)
+    #     exit()
+
+    #     return bishopAttacksOnTheFly(occ,sq)
+    # end
     
+end
+
 
 
 function generatePossibleMoves(moves,f1,type)
@@ -74,7 +79,7 @@ function generatePossibleMoves(moves,f1,type)
         el = getBit(moves,index)
         if(el == 1)
             start = f1(index) 
-            if(type == 'P')
+            if(type ==='P')
                 push!(possible_moves, BBToUCI(start,index) * 'Q')
             else
                 push!(possible_moves, BBToUCI(start,index))
@@ -90,16 +95,16 @@ end
 
 function getPawnMoves(board,colour::Char,history)
     possible_moves = []
-    opp_colour = (colour == 'W') ? 'B' : 'W'
+    opp_colour = (colour === 'W') ? 'B' : 'W'
     opposing_pieces = board[opp_colour * 'P'] | board[opp_colour * 'N'] | board[opp_colour * 'B'] | board[opp_colour * 'R'] | board[opp_colour * 'Q'] # omit K to avoid illegal capture
     empty = ~(board[colour * 'P'] | board[colour * 'N'] | board[colour * 'B'] | board[colour * 'R'] | board[colour * 'Q'] | board[colour * 'K'] | opposing_pieces | board[opp_colour * 'K'])
-    shift_function = (colour == 'W') ? (x,y) -> x << y  : (x,y) -> x >> y
-    last_rank = (colour == 'W') ? RANK_MASKS[8] : RANK_MASKS[1]
-    left_side = (colour == 'W') ? FILE_MASKS[1] : FILE_MASKS[8]
-    right_side = (colour == 'W') ? FILE_MASKS[8] : FILE_MASKS[1]
-    two_forward = (colour == 'W') ? RANK_MASKS[4] : RANK_MASKS[5]
-    operator = (colour == 'W') ? (a,b) -> a - b : (a,b) -> a + b
-    en_passant = (colour == 'W') ? (a,b) -> a + b : (a,b) -> a - b
+    shift_function = (colour === 'W') ? (x,y) -> x << y  : (x,y) -> x >> y
+    last_rank = (colour === 'W') ? RANK_MASKS[8] : RANK_MASKS[1]
+    left_side = (colour === 'W') ? FILE_MASKS[1] : FILE_MASKS[8]
+    right_side = (colour === 'W') ? FILE_MASKS[8] : FILE_MASKS[1]
+    two_forward = (colour === 'W') ? RANK_MASKS[4] : RANK_MASKS[5]
+    operator = (colour === 'W') ? (a,b) -> a - b : (a,b) -> a + b
+    en_passant = (colour === 'W') ? (a,b) -> a + b : (a,b) -> a - b
     pieces_to_move = board[colour * 'P'] 
     #check for en passant 
     if(length(history) > 0)
@@ -109,10 +114,12 @@ function getPawnMoves(board,colour::Char,history)
         last_move = missing 
         start_index, end_index = 0,0
     end
-    if (~ismissing(last_move) && (getBit(board[opp_colour * 'P'],end_index) == 1) && abs(end_index - start_index) == 16) #if last move was a pawn moving two sqs
-        if (getBit(pieces_to_move, end_index + 1) == 1)  #to the right if white, to the left if black
+        #if last move was a pawn moving two sqs
+
+    if (~ismissing(last_move) && (getBit(board[opp_colour * 'P'],end_index) == 1) && abs(end_index - start_index) == 16) 
+        if (getBit(pieces_to_move & ~FILE_MASKS[1], end_index + 1) == 1)  #to the right if white, to the left if black
             push!(possible_moves,BBToUCI(end_index + 1, en_passant(end_index, 8)))
-        elseif (getBit(pieces_to_move, end_index - 1) == 1) 
+        elseif (getBit(pieces_to_move & ~FILE_MASKS[8], end_index - 1) == 1) 
             push!(possible_moves,BBToUCI(end_index- 1, en_passant(end_index, 8)))
         end
     end
@@ -150,7 +157,7 @@ end
 
 function pawnAttacks(pawn_board,colour)
     attacks = 0
-    if (colour == 'W')
+    if (colour === 'W')
         attacks |= (pawn_board << 7) & ~FILE_MASKS[8]
         attacks |= (pawn_board << 9) & ~FILE_MASKS[1]
     else
@@ -215,9 +222,9 @@ end
 
 
 #outward facing call to games.jl
-function getMovesUCI(board,colour,history,is_check)
+function getMovesUCI(board::Dict,colour::Char,history,is_check::Bool)::Array{String}
     occ = reduce((x,y) -> x | y, values(board))
-    opp_colour = (colour == 'W') ? 'B' : 'W'
+    opp_colour = (colour === 'W') ? 'B' : 'W'
     pieces =  board[colour * 'P'] | board[colour * 'N'] | board[colour * 'B'] | board[colour * 'R'] | board[colour * 'Q'] | board[colour * 'K']
     moves = append!(
         getPieceMoves(board[colour * 'K'],occ,pieces,(x,y) -> kingMovesActual(y, getAttackBoard(opp_colour, board, true), pieces), 'K'),
@@ -226,12 +233,12 @@ function getMovesUCI(board,colour,history,is_check)
         getPieceMoves(board[colour * 'B'],occ,pieces,bishopMoves,'B'),
         getPieceMoves(board[colour * 'R'],occ,pieces,rookMoves,'R')
         )
-
     moves_fin = []
     for i in 1:length(moves)
         moves_fin = append!(moves_fin, generatePossibleMoves(moves[i][1], x -> moves[i][2], 'N'))
     end
     moves_fin = append!(moves_fin,getPawnMoves(board,colour,history))
+
     if(is_check)
         moves_fin = findNoCheckMoves(moves_fin,board,colour)
     end
@@ -244,8 +251,8 @@ function findNoCheckMoves(moves,board,colour)
     moves_no_check = []
     for move in moves
         board_state = makeMoveUCI(move,board,colour)
-        c = isCheck(board_state,colour)
-        if(~c)
+        c = 
+        if(~isCheck(board_state,colour))
             push!(moves_no_check,move)
         end
     end
@@ -255,7 +262,7 @@ end
 
 function getAttackBoard(colour,board,for_king)
     occ = reduce((x,y) -> x | y,values(board))
-    opp_colour = (colour == 'W') ? 'B' : 'W'
+    opp_colour = (colour === 'W') ? 'B' : 'W'
     occ = (for_king) ? occ &= ~(board[opp_colour * 'K']) : occ
     pieces =  board[colour * 'P'] | board[colour * 'N'] | board[colour * 'B'] | board[colour * 'R'] | board[colour * 'Q'] | board[colour * 'K']
     moves = append!(
@@ -273,10 +280,10 @@ end
 
 function castleMoves(board,colour,history,occ)
     moves = []
-    rook_pos = (colour == 'W') ? 8 : 64
-    opp_colour = (colour == 'W') ? 'B' : 'W'
-    to_move = (colour == 'W') ? setBitRange(0,6,7) : setBitRange(0,62,63)  
-    king_pos = (colour == 'W') ? 5 : 61
+    rook_pos = (colour === 'W') ? 8 : 64
+    opp_colour = (colour === 'W') ? 'B' : 'W'
+    to_move = (colour === 'W') ? setBitRange(0,6,7) : setBitRange(0,62,63)  
+    king_pos = (colour === 'W') ? 5 : 61
     piece_moved = false
     for move in history
         start_index, end_index = UCIToBB(move)
@@ -288,14 +295,14 @@ function castleMoves(board,colour,history,occ)
     #kingside
     if(getBit(occ,king_pos) > 0  && getBit(occ,rook_pos) > 0 && ~piece_moved && (occ & to_move) == 0 && (getAttackBoard(opp_colour,board,false) & to_move) == 0)
          #if both king and rook exist, no pieces between, no challenged squares, no piece has moved
-         (colour == 'W') ? push!(moves,"e1g1") : push!(moves,"e8g8")
+         (colour === 'W') ? push!(moves,"e1g1") : push!(moves,"e8g8")
     end
 
     #queenside
-    rook_pos = (colour == 'W') ? 1 : 57
-    to_move = (colour == 'W') ? setBitRange(0,2,4) : setBitRange(0,58,60)
+    rook_pos = (colour === 'W') ? 1 : 57
+    to_move = (colour === 'W') ? setBitRange(0,2,4) : setBitRange(0,58,60)
     if(getBit(occ,king_pos) > 0 && getBit(occ,rook_pos) > 0 && ~piece_moved && (occ & to_move) == 0 && (getAttackBoard(opp_colour,board,false) & to_move) == 0)
-        colour == 'W' ? push!(moves,"e1c1") : push!(moves,"e8c8")
+        colour === 'W' ? push!(moves,"e1c1") : push!(moves,"e8c8")
     end
     return moves
 end
@@ -306,7 +313,7 @@ end
 
 function isCheck(board,colour)
     king = board[colour * 'K']
-    opp_colour = (colour == 'W') ? 'B' : 'W'
+    opp_colour = (colour === 'W') ? 'B' : 'W'
     attack = getAttackBoard(opp_colour,board,true)
     return ((king & attack) > 0) ? true : false
     return false

@@ -243,7 +243,7 @@ export function pop_bit(bitboard,square){
 
 export function set_occupancy(index, bits_in_mask, attack_mask)
 {
-  //  console.log(index, bits_in_mask,attack_mask)
+    console.log(index,' ', bits_in_mask,' ',attack_mask)
     let occupancy = 0n;
     // loop over the range of bits within attack mask
     for (let count = 0; count < bits_in_mask; count++)
@@ -254,7 +254,8 @@ export function set_occupancy(index, bits_in_mask, attack_mask)
         // make sure occupancy is on board
         if (index & (1 << count))
             occupancy |= (1n << BigInt(square));
-      //  console.log(count, ' ', square, ' ', attack_mask)
+        console.log(count, ' ', square, ' ', attack_mask, ' ', occupancy)
+        
     }
     return occupancy;
 }

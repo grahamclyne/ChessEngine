@@ -1,5 +1,5 @@
 function bishopAttacksOnTheFly(occ,sq)
-    if(sq < 1 || sq > 65)
+    if(sq < 1)
         return false
     end
     attacks = UInt64(0)
@@ -95,7 +95,7 @@ n_r_bits =  [
 	11, 10, 10, 10, 10, 10, 10, 11,
 	11, 10, 10, 10, 10, 10, 10, 11,
 	11, 10, 10, 10, 10, 10, 10, 11,
-	12, 11, 11, 11, 11, 11, 11, 12,
+	12, 11, 11, 11, 11, 11, 11, 12
 ]
 
 n_b_bits = [
@@ -106,7 +106,7 @@ n_b_bits = [
 	5, 5, 7, 9, 9, 7, 5, 5,
 	5, 5, 7, 7, 7, 7, 5, 5,
 	5, 5, 5, 5, 5, 5, 5, 5,
-	6, 5, 5, 5, 5, 5, 5, 6,
+	6, 5, 5, 5, 5, 5, 5, 6
 ]
 
 function rMask(sq)
@@ -141,11 +141,11 @@ end
 
 function bMask(sq)
     result = 0
-    rank = ceil(Int64,sq / 8 - 1)
+    rank = ceil(UInt64,sq / 8 - 1)
     file = sq % 8 - 1
     file = ((sq % 8) == 0) ? 7 : file
-    rank = (rank == 8) ? 7 : rank
-    
+    rank = rank == 8 ? 7 : rank
+    # println(file, ' ', rank)
     r = rank + 1
     f = file + 1
     while(r < 7 && f < 7)
@@ -172,23 +172,14 @@ function bMask(sq)
 
     r = rank - 1
     f = file - 1
-    while(r > 1 && f > 1)
+    while(r >= 1 && f >= 1)
         result |= (1 << (f + (r * 8)))
         r = r - 1
         f = f - 1
     end
-
     return result
 end
-# export function bMask(sq: number) {
-#     let result = 0n;
-#     let rk = BigInt(sq) / 8, fl = BigInt(sq) % 8, r, f;
-#     for (r = rk + 1, f = fl + 1n; r <= 6 && f <= 6; r++, f++) result |= (1n << (f + r * 8n));
-#     for (r = rk + 1, f = fl - 1n; r <= 6 && f >= 1; r++, f--) result |= (1n << (f + r * 8n));
-#     for (r = rk - 1, f = fl + 1n; r >= 1 && f <= 6; r--, f++) result |= (1n << (f + r * 8n));
-#     for (r = rk - 1, f = fl - 1n; r >= 1 && f >= 1; r--, f--) result |= (1n << (f + r * 8n));
-#     return result;
-# }
+
 # https://www.chessprogramming.org/Looking_for_Magics
 
 rook_magic_numbers = [
@@ -330,17 +321,17 @@ function popBit(board,sq)
 end
 
 function setOcc(index,bits_in_mask,attack_mask)
-   # println(index, ' ',bits_in_mask, ' ', attack_mask)
-    occ = 0
+    # println(index, ' ',bits_in_mask, ' ', attack_mask)
+    temp_occ = 0
     for count in 0:bits_in_mask-1
         square = leastSignificantBit(attack_mask)
         attack_mask = popBit(attack_mask,square)
         if((index & (1 << count)) > 0)
-            occ |= (1 << square)
+            temp_occ |= (1 << square)
         end
-     #   println(count, ' ', square, ' ', attack_mask)
+        #  println(count, ' ', square, ' ', attack_mask, ' ',temp_occ)
     end
-    return occ
+    return temp_occ
 end
 
 

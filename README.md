@@ -51,5 +51,7 @@ d everything under the L20 label. The actual indexing is just the movq and movsd
 
 julia packages so far 
 Test
+Profile
+ProfileView
 
 THE sq variable, and whenever looking to access a square from the board is not zero indexed, 64 is possible, 0 is not etc

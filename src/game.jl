@@ -8,10 +8,15 @@ CHECK_FLAG = false
 
 
 function pickMoveUCI(board,colour,history,is_check)
-    moves = getMovesUCI(board,colour,history,is_check)
-    println("moves ",moves)
-    move = moves[rand(1:length(moves))]
-    return move
+    root = Dict( "board"=> board, "weight"=> 0, "move"=> [], "children"=> [] )
+    m = minimax(root, 3, colour, -Inf, Inf, history)
+    for child in m["children"]
+        if (child["weight"] === m["weight"]) 
+            return child["move"]
+        end
+    end
+    print("no move picked")
+    return m["children"][1]["move"]
 end
 
 
@@ -39,34 +44,34 @@ function makeMoveUCI(move,board,colour)
             #if en passant
             if ('P' in key && ~is_capture && abs(end_index - start_index) != 8 && abs(end_index - start_index) != 16)
                 if(colour == 'W')
-                    output["BP"] = setBit(board["BP"], end_index - 8, 0)
+                     output["BP"] = setBit(board["BP"], end_index - 8, 0)
                 else
-                    output["WP"] = setBit(board["WP"], end_index + 8,0)
+                     output["WP"] = setBit(board["WP"], end_index + 8,0)
                 end
             #if castle
             elseif ('K' in key)
-                if (move == "e1g1")
-                    output["WR"] = setBit(board["WR"],8,0)
-                    output["WR"] = setBit(output["WR"],6,1)
-                elseif (move == "e1c1")
+                if (move === "e1g1")
+                     output["WR"] = setBit(board["WR"],8,0)
+                     output["WR"] = setBit(output["WR"],6,1)
+                elseif (move === "e1c1")
                     output["WR"] = setBit(board["WR"],1,0)
                     output["WR"] = setBit(output["WR"],4,1)
-                elseif (move == "e8g8")
+                elseif (move === "e8g8")
                     output["BR"] = setBit(board["BR"],64,0)
                     output["BR"] = setBit(output["BR"],62,1)
-                elseif (move == "e8c8")
+                elseif (move === "e8c8")
                     output["BR"] = setBit(board["BR"],57,0)
                     output["BR"] = setBit(output["BR"],60,1)
                 end
             end
-            output[key] = setBit(board[key],start_index,0)
+            output[key] = setBit(output[key],start_index,0)
             output[key] = setBit(output[key],end_index,1)
         end
    
     end
-    if(length(move) == 5) #pawn promotion
+    if(length(move) === 5) #pawn promotion
         output[colour * 'P'] = setBit(board[colour * 'P'], start_index,0)
-        output[colour * move[5]] = setBit(output[colour * move[5]],end_index,1)
+        output[colour * move[5]] = setBit(board[colour * move[5]],end_index,1)
         return output
     end
     return output
@@ -78,9 +83,9 @@ end
 function play(board,colour,history)
     states = []
     while(true)
-        opp_colour = (colour == 'W') ? 'B' : 'W'
+        opp_colour = (colour === 'W') ? 'B' : 'W'
         is_check = isCheck(board,colour)
-        board,states = takeTurn(board,history,colour,states,is_check)
+        board,states = @time takeTurn(board,history,colour,states,is_check)
         colour = opp_colour
         if(checkEndGame(board,states,history,colour)) break end
     end
@@ -103,8 +108,8 @@ end
 # //============================================================================//
 
 function checkEndGame(board,states,history,colour)
-    opp_colour = (colour =='W') ? 'B' : 'W'
-    if (checkForMate(board,colour,history) == 1 || checkForMate(board,colour,history) == 2 || 
+    opp_colour = (colour ==='W') ? 'B' : 'W'
+    if (checkForMate(board,colour,history) === 1 || checkForMate(board,colour,history) === 2 || 
         sameBoardStateFiveTimes(states) || fiftyMoves(history) || ~(hasEnoughMaterial(board,colour) || hasEnoughMaterial(board,opp_colour)))
         return true
     end
@@ -122,11 +127,17 @@ end
 
 
 function sameBoardStateFiveTimes(states)
-  #  grouped = reduce((x,y) -> if (x[y] == missing) x[y] = 1 else x[y] = x[y] + 1 end,states)
-   # filtered = filter(x -> x[2] == 5, grouped)
-   # if(length(filtered > 0))
-   #     return true
-   # end
+    groups = Dict()
+    for i in states
+        if i in keys(groups)
+            groups[i] = groups[i] + 1
+            if(groups[i] > 5)
+                return true
+            end
+        else
+            groups[i] = 1
+        end
+    end
     return false
 end
 
@@ -154,7 +165,7 @@ end
 
 function hasEnoughMaterial(board,colour)
     if(board[colour * 'P'] > 0 || (board[colour * 'N'] > 0 && board[colour * 'B'] > 0) || board[colour * 'R'] > 0 
-        || board[colour * 'Q'] > 0  || count_ones(board[colour * 'B']) == 2)
+        || board[colour * 'Q'] > 0  || count_ones(board[colour * 'B']) === 2)
         return true
     end
 
