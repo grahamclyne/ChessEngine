@@ -2,20 +2,21 @@ mostSignificantBit(n) = 8 * sizeof(n) - leading_zeros(n)
 RANK_MASKS = [255,65280,16711680,4278190080,1095216660480,280375465082880,71776119061217280,18374686479671623680]
 FILE_MASKS = [72340172838076673,144680345676153346,289360691352306692,578721382704613384,1157442765409226768,2314885530818453536,4629771061636907072,9259542123273814144]
 
-
 function leastSignificantBit(n)
     if(n == 0)
         return 0
     end
     return UInt64(log2(n & (-n)))
 end
+
+
 function getBit(N, m)
     return (N >> (m - 1)) & 1
 end
+global letter_to_num = Dict('a'=>1,'b'=>2,'c'=>3,'d'=>4,'e'=>5,'f'=>6,'g'=>7,'h'=>8)
 
 
 function UCIToBB(move)
-    letter_to_num = Dict('a'=>1,'b'=>2,'c'=>3,'d'=>4,'e'=>5,'f'=>6,'g'=>7,'h'=>8)
     start_index = letter_to_num[move[1]] + ((parse(Int,move[2]) - 1) * 8)
     end_index = letter_to_num[move[3]] + ((parse(Int,move[4]) - 1) * 8)
     return start_index,end_index
@@ -43,10 +44,9 @@ function setBit(N,index,value)
     #  return parse(UInt64,join(reverse(n)),base=2)
 end
 
+global  m = Dict(1=>'a',2=>'b',3=>'c',4=>'d',5=>'e',6=>'f',7=>'g',8=>'h')
 
 function BBToUCI(start_index, end_index)
-    # println(start_index, ' ', end_index )
-    m = Dict(1=>'a',2=>'b',3=>'c',4=>'d',5=>'e',6=>'f',7=>'g',8=>'h')
     start_file = (start_index % 8 == 0) ? 8 : start_index % 8
     end_file = (end_index % 8 == 0) ? 8 : end_index % 8 
     start_file = m[start_file]
@@ -103,9 +103,8 @@ function prettyPrintBoard(board::Dict)
 
         end
     end
-    
-
 end
+
 
 function emptyPositions()
     board = Dict()
@@ -124,6 +123,12 @@ function emptyPositions()
     return board
 end
 
+function getWhitePieces(board)
+    return board["WP"] | board["WB"] | board["WN"] | board["WR"] | board["WQ"] | board["WK"]
+end
+    function getBlackPieces(board)
+    return board["BP"] | board["BB"] | board["BN"] | board["BR"] | board["BQ"] | board["BK"]
+    end
 function startPositions()
     board = Dict()
     board["WP"] = setBitRange(0,9,16)

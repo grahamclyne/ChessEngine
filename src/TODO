@@ -1,19 +1,17 @@
 scenario where player has more than two queens
-consolidate castling logic
-add occ and attack boards? need to rememebr to update them at any point anything is updated
-expand isValidMove
 is it correct to assume for attack boards, we should only consider our own pieces as occupied? we can still attack that square? 
 checkmate logic and turn logic both contain code to check if there is move to get out of check....
-capture logic test
 factor out en passant logic from pawn moves
-fix function parameters - try to be uniform
+perft
+uci
+player input
+
 
 NOTES TO SELF
 
 we use jest because mohca/chai does not have support for bigint
 javascript/typescript - Objects and arrays are passed by reference. Primitive values like number, string, boolean are passed by value. A reference to an object is also a primitive type and passed by value like other primitive types, but the object it refers to is still passed by reference.
 
-global variable CHECK_FLAG in game.ts a good idea?
 how can history and board state be coupled that neither can be out of sync?
 
 two weeks until bug free random move games being played

@@ -2,7 +2,6 @@ using Test
 include("util.jl")
 include("magic.jl")
 include("moves.jl")
-
 @testset "moves" verbose=true begin
     @test rookMoves(0,1) == parse(UInt64,
     "00000001"*
@@ -123,6 +122,26 @@ end
     board["WQ"] = setBit(board["WQ"],59,1)
     board["BK"] = setBit(board["BK"],61,1)
     @test isCheck(board,'B') == false    
+
+    #king capture out of checkmate
+    board = emptyPositions()
+    board["BQ"] = setBit(0,63,1)
+    board["BR"] = setBit(0,49,1)
+    board["WK"] = setBit(0,64,1)
+    @test isCheck(board,'W') == true
+    @test isCheckMate(board,'W',[]) == 0
+
+
+    #cannot move into check
+
+    board = emptyPositions()
+    board["BK"] = setBit(0,60,1)
+    board["WQ"] = setBit(0,46,1)
+    board["BP"] = setBit(0,53,1)
+    prettyPrintBoard(board)
+    @test length(getMovesUCI(board,'B',[],false)) == 5
+    
+
 end
 
 @testset "pawn promotion" verbose = true begin
@@ -137,7 +156,7 @@ end
     #pawn promotion forward to queen 
     board = emptyPositions()
     board["BP"] = setBit(board["BP"],9,1)
-    @test "a2a1Q" in getMovesUCI(board,'B',[])
+    @test "a2a1Q" in getMovesUCI(board,'B',[],false)
 end
 
 @testset "en passant" verbose = true begin
@@ -148,7 +167,7 @@ end
     board["WP"] = setBit(board["WP"],37,1)
     board["BP"] = setBit(board["BP"],38,1)
     push!(history,"e3e5")
-    moves = getMovesUCI(board,'B',history)
+    moves = getMovesUCI(board,'B',history,false)
     @test "f5e4" in moves
 
     # #not en passant of black pawn
@@ -217,12 +236,29 @@ end
 @testset "search" verbose = true begin
 end
 
+
+
+
+
 @testset "eval" verbose = true begin
+
+    board = emptyPositions()
+    board["WR"] = setBit(0,16,1)
+    board["BR"] = setBit(0,64,1)
+    board["BB"] = setBit(0,9,1)
+    @test count_ones(getAttackBoardFast(board,'W',false) & getBlackPieces(board)) == 2
+    
+    
+
+
+
 end
+
+
 
 @testset "util" verbose = true begin
     #least sig bit
-    @test leastSignificantBit(1130822006734848) == 10
-    @test 18  == leastSignificantBit(1130822006472704)
-
+#    @test 18  == leastSignificantBit(1130822006472704)
+#     @test leastSignificantBit(1130822006734848) == 10
+ 
 end

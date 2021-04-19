@@ -2,86 +2,61 @@ include("moves.jl")
 
 function staticEvaluation(board,mobility)
     score = count_ones(board["WP"]) - count_ones(board["BP"])
-    score = score + (3 * (count_ones(board["WN"])) + count_ones(board["WB"]) - (count_ones(board["BN"]) + count_ones(board["BB"])))
+    score = score + (3 * (count_ones(board["WN"]) + count_ones(board["WB"]) - (count_ones(board["BN"]) + count_ones(board["BB"]))))
     score = score + (5 * (count_ones(board["WR"]) - count_ones(board["BR"])))
     score = score + (9 * (count_ones(board["WQ"]) - count_ones(board["BQ"])))
     score = score + (200 * (count_ones(board["WK"]) - count_ones(board["BK"])))
-    score = score + (0.1 * mobility)
+#    score = score + (0.1 * mobility)
+    white_under_attack = getAttackBoardFast(board,'B',false) & getWhitePieces(board)
+    black_under_attack = getAttackBoardFast(board,'W',false) & getBlackPieces(board)
+    #number of pieces in attack
+    score = score + (0.2 * (count_ones(black_under_attack) - count_ones(white_under_attack)))
+    #find if pieces are protected that are under attack
+    score = score + (0.2 * (count_ones(white_under_attack & getAttackBoardFast(board,'W',false)) - count_ones(black_under_attack & getAttackBoardFast(board,'B',false))))
     return score
 end
 
-struct Node
-    id::Int
-    parent::Int
-    children::Array
-    alpha::Int
-    beta::Int
-    move::String
-    board::Dict
-end
 
-function printNode(node)
-    println(string(node.id) * ' ' * node.move)
-end
-
-function printTree(tree,tabs)
-    for child in tree.children
-        for i in 1:tabs
-            print('\t')
-        end
-        printNode(child)
-        if(child.children !== [])
-            
-            printTree(child,tabs+1)
-        end
-    end
-end
-
-
-function buildTree(node,colour,depth)
-    opp_colour = (colour === 'W') ? 'B' : 'W'
-    is_check = isCheck(board,colour)
-    moves = getMovesUCI(board,colour,[],is_check)
-    if(depth === 0)
-        return node
-    end
-    id = node.id
-    for move in moves
-        id = id + 1
-        temp_board = makeMoveUCI(move,board,colour)
-        child = Node(id,node.id,[],0,0,move,board)
-        child = buildTree(child,opp_colour,depth-1)
-        push!(node.children,child)
-    end
-    return node
-end
-
-
-function minimax(position, depth,colour,alpha,beta,history)
-    is_check = isCheck(position["board"],colour)
-    moves = getMovesUCI(position["board"],colour,history,is_check)
-    opp_colour = (colour === 'W') ? 'B' : 'W'
-    compare_func = (colour === 'W') ? max : min;
-    evaluation = (colour === 'W') ? -Inf : Inf;
+function negamax(alpha,beta,depth,colour,history,board, ply)
+    #  println(depth,' ',alpha,' ',beta, ' ', moves)
+    moves = getMovesFast(board,colour,history)
     if(depth == 0)
-        weight = staticEvaluation(position["board"],length(moves))
-        return Dict("board"=>position["board"],"weight"=>weight,"move"=>position["move"],"children"=>position["children"])
+        #  println("staticEval: ",alpha, " ",beta, " ")
+        x = staticEvaluation(board, length(moves))
+        # println("return staticEvaluation: ", x)
+        return x
     end
+
+ #   node_count = node_count + 1
+    old_alpha = alpha
+    bestmove_sofar = ""
     for move in moves
-        child = Dict("board"=>makeMoveUCI(move,position["board"],colour),"weight"=>0,"move"=>move,"children"=>[])
-        w = minimax(child,depth-1,opp_colour,alpha,beta,history)
-        if(colour === 'W')
-            evaluation = compare_func(w["weight"],evaluation)
-            alpha = compare_func(alpha,w["weight"])
-        else
-            evaluation = compare_func(w["weight"],evaluation)
-            beta = compare_func(beta,w["weight"])
+        copied = makeMoveUCI(move,board,colour)
+        ply = ply + 1
+        score = -negamax(-beta,-alpha,depth-1,colour,history,copied,ply)
+        ply = ply - 1
+        # println("SCORE after -negamax: ", score, ' ',depth, " ",alpha, " ",beta, " ", move, " ", ply)
+
+        if(score >= beta)
+            #  println("returning beta: ", beta )
+            return beta
         end
-        if(beta <= alpha)
-            break
+        if(score > alpha) #if better move
+            alpha = score
+            #   println("updating alpha, " , alpha)
+            if(ply == 0)
+                # println("updating best move : ", move)
+                bestmove_sofar = move
+            end
         end
-        push!(position["children"],w)
+ 
     end
-    return Dict("board"=>position["board"],"weight"=>evaluation, "move"=>position["move"],"children"=>position["children"])
+    if(old_alpha != alpha)
+        global best_move = bestmove_sofar
+    end
+    if(length(moves) == 0)
+    #check for checkmate, -> return -100000000 stalemate -> return 0
+    end
+    return alpha
 end
-    
+

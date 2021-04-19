@@ -1,15 +1,63 @@
-include("moves.jl")
-include("magic.jl")
-include("game.jl")
-include("search.jl")
+# include("./moves.jl")
+# include("magic.jl")cd
+# include("game.jl")
+include("./search.jl")
 using Profile
 using PProf
 using Traceur
+using BenchmarkTools
 board = startPositions()
 colour = 'W'
+ play(board,colour,[])
 
-global bishop_attacks = initSlidersAttack(true)
-global rook_attacks = initSlidersAttack(false)
+# prettyPrintBoard(board)
+# getMovesUCI(board,colour,[],true)
+# @time getMovesUCI(board,colour,[],true)
+# moves = @time getMovesUCI(board,colour,[],false)
+# println(moves)
+# history = []
+# getAttackBoard(board,colour,false)
+# @time getAttackBoard(board,colour,false)
+# getAttackBoardFast(board,colour,false)
+# @time getAttackBoardFast(board,colour,false)
+# getMovesUCI(board,colour,history,false)
+# @time getMovesUCI(board,colour,history,false)
+# getMovesFast(board,colour,history)
+# @time getMovesFast(board,colour,history)
+
+
+
+makeMoveUCI("e2e4",board,'W')
+@benchmark makeMoveUCI("e2e4",board,'W')
+# function x()
+# sq = 10
+# occ = reduce((x,y) -> x | y, values(board))
+# attacks = bishopAttacksOnTheFly(occ,sq)
+# printBB(attacks)
+# negamax(-Inf,Inf,3,colour,[],board,0)
+# occ = reduce((x,y) -> x | y, values(board))
+# opp_colour = (colour === 'W') ? 'B' : 'W'
+# pieces =  board[colour * 'P'] | board[colour * 'N'] | board[colour * 'B'] | board[colour * 'R'] | board[colour * 'Q'] | board[colour * 'K']
+
+# @time negamax(-Inf,Inf,3,colour,[],board,0)
+# println(getPieceMoves(board[colour * 'Q'],occ,pieces,queenMoves,'Q'))
+# println(getPieceMovesFast(board[colour * 'Q'],occ,pieces,queenMoves))
+# ar = []
+# while(attacks > 0)
+#     index = leastSignificantBit(attacks) + 1
+#     attacks = popBit(attacks, leastSignificantBit(attacks))
+#     push!(ar,BBToUCI(sq,index))
+# end
+# end
+
+# x()
+#white in check, king could take a piece, that piece protected
+#    board = emptyPositions()
+#    board["WB"] = setBit(board["WP"],3,1)
+#    board["WN"] = setBit(board["WN"],11,1)
+#    board["BQ"] = setBit(board["BQ"],5,1)
+#    board["WK"] = setBit(board["WK"],4,1)
+#    print(isCheckMate(board,'W',[]))
 
 # rookMoves(0,sq)
 # @time rookMoves(0,sq)
@@ -29,9 +77,11 @@ global rook_attacks = initSlidersAttack(false)
 # printBB(bishopAttacksOnTheFly(occ,59))
 # printBB(bMask(59))
 # prettyPrintBoard(board)
+
 # printBB(board["BR"])
- play(board,colour,[])
-#println(bMask(41))
+#score = negamax(-Inf, Inf, 2,colour,[],board,0);
+#print(best_move)
+# #println(bMask(41))
 # x = bishopMoves(17501020044661911169,41)
 # printBB(x)
 #printBB(bMask(41))

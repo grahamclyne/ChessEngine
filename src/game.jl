@@ -1,5 +1,4 @@
 include("util.jl")
-CHECK_FLAG = false
 
 
 # =============================  GAME MECHANICS  =============================
@@ -8,15 +7,9 @@ CHECK_FLAG = false
 
 
 function pickMoveUCI(board,colour,history,is_check)
-    root = Dict( "board"=> board, "weight"=> 0, "move"=> [], "children"=> [] )
-    m = minimax(root, 3, colour, -Inf, Inf, history)
-    for child in m["children"]
-        if (child["weight"] === m["weight"]) 
-            return child["move"]
-        end
-    end
-    print("no move picked")
-    return m["children"][1]["move"]
+    w = negamax(-Inf,Inf,3,colour,history,board,0)
+    println("weight of move: ", w, ' ', best_move)
+    return best_move
 end
 
 
@@ -27,23 +20,21 @@ function makeMoveUCI(move,board,colour)
     for (key,value) in board
         is_capture = false
         for key_2 in keys(board)
-            if(key == key_2)
+            if(key === key_2)
                 continue
             end
             bit_board = board[key_2]
-            for index in 1:64
-                if(getBit(bit_board,index) == 1 && index == end_index)
-                    output[key_2] = setBit(board[key_2],end_index,0)
-                    is_capture = true
-                    break
-                end
+            if(bit_board & (1 << (end_index - 1)) > 0)
+                output[key_2] = setBit(board[key_2],end_index,0)
+                is_capture = true
+                break
             end
         end
 
         if (getBit(value,start_index) == 1)
             #if en passant
             if ('P' in key && ~is_capture && abs(end_index - start_index) != 8 && abs(end_index - start_index) != 16)
-                if(colour == 'W')
+                if(colour === 'W')
                      output["BP"] = setBit(board["BP"], end_index - 8, 0)
                 else
                      output["WP"] = setBit(board["WP"], end_index + 8,0)
@@ -111,6 +102,8 @@ function checkEndGame(board,states,history,colour)
     opp_colour = (colour ==='W') ? 'B' : 'W'
     if (checkForMate(board,colour,history) === 1 || checkForMate(board,colour,history) === 2 || 
         sameBoardStateFiveTimes(states) || fiftyMoves(history) || ~(hasEnoughMaterial(board,colour) || hasEnoughMaterial(board,opp_colour)))
+        println("GAME OVER")
+        print(board)
         return true
     end
     return false
@@ -118,11 +111,11 @@ end
 
 
 function checkForMate(board,colour,history)
-    if(isCheck(board,colour))
-        CHECK_FLAG = true
+    check_mate = isCheckMate(board,colour,history)
+    if(check_mate == true)
+        println("checkmate")
     end
-
-    return isCheckMate(board,colour,history)
+    return check_mate
 end
 
 
@@ -132,6 +125,7 @@ function sameBoardStateFiveTimes(states)
         if i in keys(groups)
             groups[i] = groups[i] + 1
             if(groups[i] > 5)
+                println("same state five times")
                 return true
             end
         else
