@@ -55,3 +55,5 @@ Profile
 ProfileView
 
 THE sq variable, and whenever looking to access a square from the board is not zero indexed, 64 is possible, 0 is not etc
+
+need to add current path to C:\Users\Graham Clyne\.julia\config\startup.jl and push it to LOAD_PATH for modules to work

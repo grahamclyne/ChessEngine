@@ -1,40 +1,11 @@
-include("util.jl")
-include("magic.jl")
-include("game.jl")
+module Moves
+
+import Magic
+import Util
 
 
-
-function initSlidersAttack(is_bishop)
-    attacks = Array{Dict}(undef,64)
-    for i in 1:64
-        attacks[i] = Dict()
-    end
-    println("INITIALIZING SLIDER MOVES",is_bishop)
-    for sq in 1:64
-        attack_mask = (is_bishop) ? bMask(sq) : rMask(sq)
-        relevant_bits_count = count_ones(attack_mask)
-        occupancy_indicies = (1 << relevant_bits_count)
-        for index in 0:occupancy_indicies-1
-            if(is_bishop)
-                occ = UInt128(setOcc(index,relevant_bits_count,attack_mask))
-                magic_index = (occ * bishop_magic_numbers[sq]) >> (64 - n_b_bits[sq])
-                attacks[sq][magic_index] = bishopAttacksOnTheFly(occ,sq)
-            else
-                occ = UInt128(setOcc(index,relevant_bits_count,attack_mask))
-                magic_index = (occ * rook_magic_numbers[sq]) >> (64 - n_r_bits[sq]) 
-                attacks[sq][magic_index] = rookAttacksOnTheFly(occ,sq)
-
-            end
-        end
-    end
-    return attacks
-end
-
-
-
-global bishop_attacks = initSlidersAttack(true)
-global rook_attacks = initSlidersAttack(false)
-
+global bishop_attacks = Magic.initSlidersAttack(true)
+global rook_attacks = Magic.initSlidersAttack(false)
 
 
 
@@ -43,18 +14,18 @@ function rookMoves(occ, sq)
     #could use whole occupancy board,but would map to too many possibilties, following line gives us a reduced occupancy that is much more manageable
     #use same magic number while instantiating rook_moves array as for rook_magic_numbers    
     if(sq == 0) return 0 end
-    occ &= UInt128(rMask(sq))
-    occ *= rook_magic_numbers[sq] 
-    occ >>= (64 - n_r_bits[sq])
+    occ &= UInt128(Magic.rMask(sq))
+    occ *= Magic.rook_magic_numbers[sq] 
+    occ >>= (64 - Magic.n_r_bits[sq])
     return rook_attacks[sq][occ]
     end
     
 function bishopMoves(occ,sq)
     if(sq == 0) return 0 end
     sq = Int(sq) #i dont know why this is necessary, when sq = 41, some error comes up? 
-    occ &= UInt128(bMask(sq))
-    occ *= bishop_magic_numbers[sq]
-    occ >>= (64 - n_b_bits[sq])
+    occ &= UInt128(Magic.bMask(sq))
+    occ *= Magic.bishop_magic_numbers[sq]
+    occ >>= (64 - Magic.n_b_bits[sq])
     return bishop_attacks[sq][occ]
 end
 
@@ -63,13 +34,13 @@ end
 function generatePossibleMoves(moves,f1,type)
     possible_moves = []
     for index in 1:64
-        el = getBit(moves,index)
+        el = Util.getBit(moves,index)
         if(el == 1)
             start = f1(index) 
             if(type ==='P')
-                push!(possible_moves, BBToUCI(start,index) * 'Q')
+                push!(possible_moves, Util.BBToUCI(start,index) * 'Q')
             else         
-                push!(possible_moves, BBToUCI(start,index))
+                push!(possible_moves, Util.BBToUCI(start,index))
             end
         end
     end
@@ -84,28 +55,28 @@ function getPawnMoves(board,colour::Char,history)
     opposing_pieces = board[opp_colour * 'P'] | board[opp_colour * 'N'] | board[opp_colour * 'B'] | board[opp_colour * 'R'] | board[opp_colour * 'Q'] # omit K to avoid illegal capture
     empty = ~(board[colour * 'P'] | board[colour * 'N'] | board[colour * 'B'] | board[colour * 'R'] | board[colour * 'Q'] | board[colour * 'K'] | opposing_pieces | board[opp_colour * 'K'])
     shift_function = (colour === 'W') ? (x,y) -> x << y  : (x,y) -> x >> y
-    last_rank = (colour === 'W') ? RANK_MASKS[8] : RANK_MASKS[1]
-    left_side = (colour === 'W') ? FILE_MASKS[1] : FILE_MASKS[8]
-    right_side = (colour === 'W') ? FILE_MASKS[8] : FILE_MASKS[1]
-    two_forward = (colour === 'W') ? RANK_MASKS[4] : RANK_MASKS[5]
+    last_rank = (colour === 'W') ? Util.RANK_MASKS[8] : Util.RANK_MASKS[1]
+    left_side = (colour === 'W') ? Util.FILE_MASKS[1] : Util.FILE_MASKS[8]
+    right_side = (colour === 'W') ? Util.FILE_MASKS[8] : Util.FILE_MASKS[1]
+    two_forward = (colour === 'W') ? Util.RANK_MASKS[4] : Util.RANK_MASKS[5]
     operator = (colour === 'W') ? (a,b) -> a - b : (a,b) -> a + b
     en_passant = (colour === 'W') ? (a,b) -> a + b : (a,b) -> a - b
     pieces_to_move = board[colour * 'P'] 
     #check for en passant 
     if(length(history) > 0)
         last_move = history[length(history)]
-        start_index, end_index = UCIToBB(last_move)
+        start_index, end_index = Util.UCIToBB(last_move)
     else
         last_move = missing 
         start_index, end_index = 0,0
     end
         #if last move was a pawn moving two sqs
 
-    if (~ismissing(last_move) && (getBit(board[opp_colour * 'P'],end_index) == 1) && abs(end_index - start_index) == 16) 
-        if (getBit(pieces_to_move & ~FILE_MASKS[1], end_index + 1) == 1)  #to the right if white, to the left if black
-            push!(possible_moves,BBToUCI(end_index + 1, en_passant(end_index, 8)))
-        elseif (getBit(pieces_to_move & ~FILE_MASKS[8], end_index - 1) == 1) 
-            push!(possible_moves,BBToUCI(end_index- 1, en_passant(end_index, 8)))
+    if (~ismissing(last_move) && (Util.getBit(board[opp_colour * 'P'],end_index) == 1) && abs(end_index - start_index) == 16) 
+        if (Util.getBit(pieces_to_move & ~Util.FILE_MASKS[1], end_index + 1) == 1)  #to the right if white, to the left if black
+            push!(possible_moves,Util.BBToUCI(end_index + 1, en_passant(end_index, 8)))
+        elseif (Util.getBit(pieces_to_move & ~Util.FILE_MASKS[8], end_index - 1) == 1) 
+            push!(possible_moves,Util.BBToUCI(end_index- 1, en_passant(end_index, 8)))
         end
     end
 
@@ -144,11 +115,11 @@ function pawnAttacks(pawn_board,colour)
     if(pawn_board == 0) return 0 end
     attacks = 0
     if (colour === 'W')
-        attacks |= (pawn_board << 7) & ~FILE_MASKS[8]
-        attacks |= (pawn_board << 9) & ~FILE_MASKS[1]
+        attacks |= (pawn_board << 7) & ~Util.FILE_MASKS[8]
+        attacks |= (pawn_board << 9) & ~Util.FILE_MASKS[1]
     else
-        attacks |= (pawn_board >> 7) & ~FILE_MASKS[1]
-        attacks |= (pawn_board >> 9) & ~FILE_MASKS[8]
+        attacks |= (pawn_board >> 7) & ~Util.FILE_MASKS[1]
+        attacks |= (pawn_board >> 9) & ~Util.FILE_MASKS[8]
     end
     return [[attacks, 0, "P"]]
 end
@@ -157,27 +128,29 @@ function pawnAttacksFast(pawn_board,colour)
     if(pawn_board == 0) return 0 end
     attacks = 0
     if (colour === 'W')
-        attacks |= (pawn_board << 7) & ~FILE_MASKS[8]
-        attacks |= (pawn_board << 9) & ~FILE_MASKS[1]
+        attacks |= (pawn_board << 7) & ~Util.FILE_MASKS[8]
+        attacks |= (pawn_board << 9) & ~Util.FILE_MASKS[1]
     else
-        attacks |= (pawn_board >> 7) & ~FILE_MASKS[1]
-        attacks |= (pawn_board >> 9) & ~FILE_MASKS[8]
+        attacks |= (pawn_board >> 7) & ~Util.FILE_MASKS[1]
+        attacks |= (pawn_board >> 9) & ~Util.FILE_MASKS[8]
     end
     return attacks
 end
+
+
 function knightMoves(sq)
     if(sq == 0) return 0 end
 
     attacks = 0
     board = 2^(sq - 1)
-    if ((board >> 17) & ~FILE_MASKS[8] > 0) attacks |= (board >> 17) end
-    if ((board >> 15) & ~FILE_MASKS[1] > 0) attacks |= (board >> 15) end
-    if ((board >> 10) & ~FILE_MASKS[8] & ~FILE_MASKS[7] > 0) attacks |= (board >> 10) end
-    if ((board >> 6) & ~FILE_MASKS[1] & ~FILE_MASKS[2] > 0 ) attacks |= (board >> 6) end
-    if ((board << 17) & ~FILE_MASKS[1] > 0 ) attacks |= (board << 17) end
-    if ((board << 15) & ~FILE_MASKS[8] > 0 ) attacks |= (board << 15) end
-    if ((board << 10) & ~FILE_MASKS[1] & ~FILE_MASKS[2] > 0) attacks |= (board << 10) end
-    if ((board << 6) & ~FILE_MASKS[8] & ~FILE_MASKS[7] > 0) attacks |= (board << 6) end
+    if ((board >> 17) & ~Util.FILE_MASKS[8] > 0) attacks |= (board >> 17) end
+    if ((board >> 15) & ~Util.FILE_MASKS[1] > 0) attacks |= (board >> 15) end
+    if ((board >> 10) & ~Util.FILE_MASKS[8] & ~Util.FILE_MASKS[7] > 0) attacks |= (board >> 10) end
+    if ((board >> 6) & ~Util.FILE_MASKS[1] & ~Util.FILE_MASKS[2] > 0 ) attacks |= (board >> 6) end
+    if ((board << 17) & ~Util.FILE_MASKS[1] > 0 ) attacks |= (board << 17) end
+    if ((board << 15) & ~Util.FILE_MASKS[8] > 0 ) attacks |= (board << 15) end
+    if ((board << 10) & ~Util.FILE_MASKS[1] & ~Util.FILE_MASKS[2] > 0) attacks |= (board << 10) end
+    if ((board << 6) & ~Util.FILE_MASKS[8] & ~Util.FILE_MASKS[7] > 0) attacks |= (board << 6) end
     return attacks
 end
 
@@ -191,14 +164,14 @@ function kingMoves(sq)
     if(sq == 0) return 0 end
     attacks = 0
     board = 2^(sq-1)
-    if ((board >> 1) & ~FILE_MASKS[8] > 0 ) attacks |= (board >> 1) end
-    if ((board >> 7) & ~FILE_MASKS[1] > 0 ) attacks |= (board >> 7) end
+    if ((board >> 1) & ~Util.FILE_MASKS[8] > 0 ) attacks |= (board >> 1) end
+    if ((board >> 7) & ~Util.FILE_MASKS[1] > 0 ) attacks |= (board >> 7) end
     attacks |= (board >> 8) 
-    if ((board >> 9) & ~FILE_MASKS[8] > 0 ) attacks |= (board >> 9) end 
-    if ((board << 1) & ~FILE_MASKS[1] > 0 ) attacks |= (board << 1) end 
-    if ((board << 7) & ~FILE_MASKS[8] > 0) attacks |= (board << 7) end 
+    if ((board >> 9) & ~Util.FILE_MASKS[8] > 0 ) attacks |= (board >> 9) end 
+    if ((board << 1) & ~Util.FILE_MASKS[1] > 0 ) attacks |= (board << 1) end 
+    if ((board << 7) & ~Util.FILE_MASKS[8] > 0) attacks |= (board << 7) end 
     attacks |= (board << 8) 
-    if ((board << 9) & ~FILE_MASKS[1] > 0 ) attacks |= (board << 9) end
+    if ((board << 9) & ~Util.FILE_MASKS[1] > 0 ) attacks |= (board << 9) end
     return attacks
 end
 
@@ -245,27 +218,28 @@ function getPieceMovesFast(board,occ,pieces,f)
     if(board == 0) #none of this type of piece exist
         return []
     end
-    piece_1 = mostSignificantBit(board) 
-    piece_2 = leastSignificantBit(board) + 1
+    piece_1 = Util.mostSignificantBit(board) 
+    piece_2 = Util.leastSignificantBit(board) + 1
+
     if((piece_1 == piece_2) )
         moves = f(occ,piece_1) & ~pieces
         while(moves > 0)
-            index = leastSignificantBit(moves) 
-            moves = popBit(moves, index)
-            push!(ar,BBToUCI(piece_1,index + 1))
+            index = Util.leastSignificantBit(moves) 
+            moves = Util.popBit(moves, index)
+            push!(ar,Util.BBToUCI(piece_1,index + 1))
         end
     else
         moves = f(occ,piece_1) & ~pieces
         while(moves > 0)
-            index = leastSignificantBit(moves)
-            moves = popBit(moves, index )
-            push!(ar,BBToUCI(piece_1,index +1))
+            index = Util.leastSignificantBit(moves)
+            moves = Util.popBit(moves, index )
+            push!(ar,Util.BBToUCI(piece_1,index +1))
         end
         moves = f(occ,piece_2) & ~pieces
         while(moves > 0)
-            index = leastSignificantBit(moves)
-            moves = popBit(moves, index )
-            push!(ar,BBToUCI(piece_2,index + 1))
+            index = Util.leastSignificantBit(moves)
+            moves = Util.popBit(moves, index )
+            push!(ar,Util.BBToUCI(piece_2,index + 1))
         end
     end
     return ar
@@ -318,7 +292,17 @@ function findNoCheckMoves(moves,board::Dict,colour::Char)::Array{String}
     moves_no_check = []
   #  moves_no_check = Array{String}(undef,length(moves))
     for index in 1:length(moves)
-        board_state = makeMoveUCI(moves[index],board,colour)
+        #just look for pinned pieces
+        start_index,end_index = Util.UCIToBB(moves[index])
+        board_state = copy(board)
+        for key in keys(board)
+            if(board[key] & (1 << (start_index - 1)) > 0  && ~('K' in key))
+                board_state[key] = Util.setBit(board_state[key], start_index,0)
+                board_state[key] = Util.setBit(board_state[key],end_index,1)
+            elseif(board[key] & (1 << (end_index - 1)) > 0 && ~('K' in key))
+                board_state[key] = Util.setBit(board_state[key], end_index,0)
+            end
+        end
         if(~isCheck(board_state,colour))
             push!(moves_no_check,moves[index])
         end
@@ -352,56 +336,76 @@ function getAttackBoardFast(board,colour,for_king)
     pieces =  board[colour * 'P'] | board[colour * 'N'] | board[colour * 'B'] | board[colour * 'R'] | board[colour * 'Q'] | board[colour * 'K']
     attacks = 0
     for key in keys(board)
-        temp = board[key] & ~pieces
-        while(temp > 0)
-        piece_1 = leastSignificantBit(temp)
-        piece_2 = mostSignificantBit(temp)
-        temp = popBit(temp,piece_1)
-        temp = popBit(temp,piece_2)
-            if(colour * 'Q' ==  key)
-                attacks |= queenMoves(occ,piece_1)
-            elseif(colour * 'K' == key)
-                attacks |= kingMoves(piece_1)
-            elseif(colour * 'B' == key)
-                attacks |= bishopMoves(occ,piece_1)
-                attacks |= bishopMoves(occ,piece_2)
-            elseif(colour * 'N' == key)
-                attacks |= knightMoves(piece_1)
-                attacks |= knightMoves(piece_2)
-            elseif(colour * 'R' == key)
-                attacks |= rookMoves(occ,piece_1)
-                attacks |= rookMoves(occ,piece_2)
+        temp = board[key]
+        while(temp > UInt64(0))
+            piece_1 = Util.leastSignificantBit(temp) + 1
+            piece_2 = Util.mostSignificantBit(temp) 
+            temp = Util.popBit(temp,piece_1 - UInt64(1))
+            temp = Util.popBit(temp,piece_2 - UInt64(1))
+            #this is separated out, as using * for string concat is slow.... 
+            if(colour == 'W')
+                if("WQ" ===  key)
+                    attacks |= queenMoves(occ,piece_1) & ~pieces
+                elseif("WK" === key)
+                    attacks |= kingMoves(piece_1) & ~pieces
+                elseif("WB" === key)
+                    attacks |= bishopMoves(occ,piece_1) & ~pieces
+                    attacks |= bishopMoves(occ,piece_2) & ~pieces
+                elseif("WN" === key)
+                    attacks |= knightMoves(piece_1) & ~pieces
+                    attacks |= knightMoves(piece_2) & ~pieces
+                elseif("WR" === key)
+                    attacks |= rookMoves(occ,piece_1) & ~pieces
+                    attacks |= rookMoves(occ,piece_2) & ~pieces
+                end
+            elseif (colour == 'B')
+                if("BQ" === key)
+                    attacks |= queenMoves(occ,piece_1) & ~pieces
+                elseif("BK" === key)
+                    attacks |= kingMoves(piece_1) & ~pieces
+                elseif("BB" === key)
+                    attacks |= bishopMoves(occ,piece_1) & ~pieces
+                    attacks |= bishopMoves(occ,piece_2) & ~pieces
+                elseif( "BN" === key)
+                    attacks |= knightMoves(piece_1) & ~pieces
+                    attacks |= knightMoves(piece_2) & ~pieces
+                elseif("BR" === key)
+                    attacks |= rookMoves(occ,piece_1) & ~pieces
+                    attacks |= rookMoves(occ,piece_2) & ~pieces
+                end
             end
         end
     end
     attacks |= pawnAttacksFast(board[colour * 'P'],colour)
     return attacks
-    
 end
+
+
+
 function castleMoves(board,colour,history,occ)
     moves = []
     rook_pos = (colour === 'W') ? 8 : 64
     opp_colour = (colour === 'W') ? 'B' : 'W'
-    to_move = (colour === 'W') ? setBitRange(0,6,7) : setBitRange(0,62,63)  
+    to_move = (colour === 'W') ? Util.setBitRange(0,6,7) : Util.setBitRange(0,62,63)  
     king_pos = (colour === 'W') ? 5 : 61
     piece_moved = false
     for move in history
-        start_index, end_index = UCIToBB(move)
-        if(getBit(board[colour * 'K'],end_index) == 1 || getBit(board[colour * 'R'],end_index) == 1) #make sure it is correct piece
+        start_index, end_index = Util.UCIToBB(move)
+        if(Util.getBit(board[colour * 'K'],end_index) == 1 || Util.getBit(board[colour * 'R'],end_index) == 1) #make sure it is correct piece
             piece_moved = true
         end
     end
 
     #kingside
-    if(getBit(occ,king_pos) > 0  && getBit(occ,rook_pos) > 0 && ~piece_moved && (occ & to_move) == 0 && (getAttackBoardFast(board,opp_colour,false) & to_move) == 0)
+    if(Util.getBit(occ,king_pos) > 0  && Util.getBit(occ,rook_pos) > 0 && ~piece_moved && (occ & to_move) == 0 && (getAttackBoardFast(board,opp_colour,false) & to_move) == 0)
          #if both king and rook exist, no pieces between, no challenged squares, no piece has moved
          (colour === 'W') ? push!(moves,"e1g1") : push!(moves,"e8g8")
     end
 
     #queenside
     rook_pos = (colour === 'W') ? 1 : 57
-    to_move = (colour === 'W') ? setBitRange(0,2,4) : setBitRange(0,58,60)
-    if(getBit(occ,king_pos) > 0 && getBit(occ,rook_pos) > 0 && ~piece_moved && (occ & to_move) == 0 && (getAttackBoardFast(board,opp_colour,false) & to_move) == 0)
+    to_move = (colour === 'W') ? Util.setBitRange(0,2,4) : Util.setBitRange(0,58,60)
+    if(Util.getBit(occ,king_pos) > 0 && Util.getBit(occ,rook_pos) > 0 && ~piece_moved && (occ & to_move) == 0 && (getAttackBoardFast(board,opp_colour,false) & to_move) == 0)
         colour === 'W' ? push!(moves,"e1c1") : push!(moves,"e8c8")
     end
     return moves
@@ -417,10 +421,12 @@ function isCheck(board,colour)
     return ((board[colour * 'K'] & attack) > 0) ? true : false
 end
 
+
+
 function isCheckMate(board,colour,history)
     check = isCheck(board,colour)
     legal_moves = getMovesFast(board,colour,history)
-    while(check && length(legal_moves) > 0)
+    while(check && (length(legal_moves) > 0))
         move = legal_moves[1]
         board_state = makeMoveUCI(move,board,colour)
         if(!isCheck(board_state,colour))
@@ -436,4 +442,59 @@ function isCheckMate(board,colour,history)
     else
         return 0
     end
+end
+
+
+function makeMoveUCI(move,board,colour)
+    output = copy(board)
+    start_index, end_index = Util.UCIToBB(move)
+    #see if cap
+    is_capture = false
+    for key in keys(board)
+        if(board[key] & (1 << (end_index - 1)) > 0 && (board[key] & (1 << (start_index - 1))) == 0)
+            output[key] = Util.setBit(board[key],end_index,0)
+            is_capture = true
+            break
+        end
+    end
+    for (key,value) in board
+        if (Util.getBit(value,start_index) === UInt64(1))
+            #if en passant
+            if ('P' in key && ~is_capture && abs(end_index - start_index) !== UInt64(8) && abs(end_index - start_index) !== UInt64(16))
+                if(colour === 'W')
+                     output["BP"] = Util.setBit(board["BP"], end_index - 8, 0)
+                else
+                     output["WP"] = Util.setBit(board["WP"], end_index + 8,0)
+                end
+            #if castle
+            elseif ('K' in key)
+                if (move === "e1g1")
+                     output["WR"] = Util.setBit(board["WR"],8,0)
+                     output["WR"] = Util.setBit(output["WR"],6,1)
+                elseif (move === "e1c1")
+                    output["WR"] = Util.Util.setBit(board["WR"],1,0)
+                    output["WR"] = Util.setBit(output["WR"],4,1)
+                elseif (move === "e8g8")
+                    output["BR"] = Util.setBit(board["BR"],64,0)
+                    output["BR"] = Util.setBit(output["BR"],62,1)
+                elseif (move === "e8c8")
+                    output["BR"] = Util.setBit(board["BR"],57,0)
+                    output["BR"] = Util.setBit(output["BR"],60,1)
+                end
+            end
+            output[key] = Util.setBit(output[key],start_index,0)
+            output[key] = Util.setBit(output[key],end_index,1)
+        end
+   
+    end
+    if(length(move) === 5) #pawn promotion
+        output[colour * 'P'] = Util.setBit(board[colour * 'P'], start_index,0)
+        output[colour * move[5]] = Util.setBit(board[colour * move[5]],end_index,1)
+        return output
+    end
+    return output
+end
+
+
+
 end

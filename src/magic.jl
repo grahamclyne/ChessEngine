@@ -1,3 +1,35 @@
+module Magic
+
+
+import Util
+
+function initSlidersAttack(is_bishop)
+    attacks = Array{Dict}(undef,64)
+    for i in 1:64
+        attacks[i] = Dict()
+    end
+    println("INITIALIZING SLIDER MOVES",is_bishop)
+    for sq in 1:64
+        attack_mask = (is_bishop) ? bMask(sq) : rMask(sq)
+        relevant_bits_count = count_ones(attack_mask)
+        occupancy_indicies = (1 << relevant_bits_count)
+        for index in 0:occupancy_indicies-1
+            if(is_bishop)
+                occ = UInt128(setOcc(index,relevant_bits_count,attack_mask))
+                magic_index = (occ * bishop_magic_numbers[sq]) >> (64 - n_b_bits[sq])
+                attacks[sq][magic_index] = bishopAttacksOnTheFly(occ,sq)
+            else
+                occ = UInt128(setOcc(index,relevant_bits_count,attack_mask))
+                magic_index = (occ * rook_magic_numbers[sq]) >> (64 - n_r_bits[sq]) 
+                attacks[sq][magic_index] = rookAttacksOnTheFly(occ,sq)
+
+            end
+        end
+    end
+    return attacks
+end
+
+
 function bishopAttacksOnTheFly(occ,sq)
     if(sq < 1)
         return false
@@ -316,16 +348,14 @@ bishop_magic_numbers = [
     0x4010011029020020
 ];
 
-function popBit(board,sq)
-    return board &= ~(1 << sq)
-end
+
 
 function setOcc(index,bits_in_mask,attack_mask)
     # println(index, ' ',bits_in_mask, ' ', attack_mask)
     temp_occ = 0
     for count in 0:bits_in_mask-1
-        square = leastSignificantBit(attack_mask)
-        attack_mask = popBit(attack_mask,square)
+        square = Util.leastSignificantBit(attack_mask)
+        attack_mask = Util.popBit(attack_mask,square)
         if((index & (1 << count)) > 0)
             temp_occ |= (1 << square)
         end
@@ -335,3 +365,4 @@ function setOcc(index,bits_in_mask,attack_mask)
 end
 
 
+end

@@ -1,81 +1,22 @@
-include("util.jl")
+module Game
 
-
-# =============================  GAME MECHANICS  =============================
-# ============================================================================
-# all modifications to board live here
-
+import Util
+import Moves
+import Search
 
 function pickMoveUCI(board,colour,history,is_check)
-    w = negamax(-Inf,Inf,3,colour,history,board,0)
-    println("weight of move: ", w, ' ', best_move)
-    return best_move
+    
+    w = Search.negamax(-Inf,Inf,2,colour,history,board,0)
+    println("weight of move: ", w, ' ', Search.best_move)
+    return Search.best_move
 end
-
-
-
-function makeMoveUCI(move,board,colour)
-    output = copy(board)
-    start_index, end_index = UCIToBB(move)
-    for (key,value) in board
-        is_capture = false
-        for key_2 in keys(board)
-            if(key === key_2)
-                continue
-            end
-            bit_board = board[key_2]
-            if(bit_board & (1 << (end_index - 1)) > 0)
-                output[key_2] = setBit(board[key_2],end_index,0)
-                is_capture = true
-                break
-            end
-        end
-
-        if (getBit(value,start_index) == 1)
-            #if en passant
-            if ('P' in key && ~is_capture && abs(end_index - start_index) != 8 && abs(end_index - start_index) != 16)
-                if(colour === 'W')
-                     output["BP"] = setBit(board["BP"], end_index - 8, 0)
-                else
-                     output["WP"] = setBit(board["WP"], end_index + 8,0)
-                end
-            #if castle
-            elseif ('K' in key)
-                if (move === "e1g1")
-                     output["WR"] = setBit(board["WR"],8,0)
-                     output["WR"] = setBit(output["WR"],6,1)
-                elseif (move === "e1c1")
-                    output["WR"] = setBit(board["WR"],1,0)
-                    output["WR"] = setBit(output["WR"],4,1)
-                elseif (move === "e8g8")
-                    output["BR"] = setBit(board["BR"],64,0)
-                    output["BR"] = setBit(output["BR"],62,1)
-                elseif (move === "e8c8")
-                    output["BR"] = setBit(board["BR"],57,0)
-                    output["BR"] = setBit(output["BR"],60,1)
-                end
-            end
-            output[key] = setBit(output[key],start_index,0)
-            output[key] = setBit(output[key],end_index,1)
-        end
-   
-    end
-    if(length(move) === 5) #pawn promotion
-        output[colour * 'P'] = setBit(board[colour * 'P'], start_index,0)
-        output[colour * move[5]] = setBit(board[colour * move[5]],end_index,1)
-        return output
-    end
-    return output
-end
-
-
 
 
 function play(board,colour,history)
     states = []
     while(true)
         opp_colour = (colour === 'W') ? 'B' : 'W'
-        is_check = isCheck(board,colour)
+        is_check = Moves.isCheck(board,colour)
         board,states = @time takeTurn(board,history,colour,states,is_check)
         colour = opp_colour
         if(checkEndGame(board,states,history,colour)) break end
@@ -87,10 +28,10 @@ function takeTurn(board,history,colour,states,is_check)
     move = pickMoveUCI(board,colour,history,is_check)
     push!(history,move)
     println("move picked: ", move)
-    board = makeMoveUCI(move,board,colour)
+    board = Moves.makeMoveUCI(move,board,colour)
     state = reduce((x,y) -> x | y, values(board))
     push!(states,state)
-    prettyPrintBoard(board)
+    Util.prettyPrintBoard(board)
     return board,states
 end
 
@@ -111,7 +52,7 @@ end
 
 
 function checkForMate(board,colour,history)
-    check_mate = isCheckMate(board,colour,history)
+    check_mate = Moves.isCheckMate(board,colour,history)
     if(check_mate == true)
         println("checkmate")
     end
@@ -162,7 +103,8 @@ function hasEnoughMaterial(board,colour)
         || board[colour * 'Q'] > 0  || count_ones(board[colour * 'B']) === 2)
         return true
     end
-
     print("not enough material")
     return false
+end
+
 end

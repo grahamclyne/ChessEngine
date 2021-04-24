@@ -1,6 +1,10 @@
-mostSignificantBit(n) = 8 * sizeof(n) - leading_zeros(n) 
+module Util
+
+
+mostSignificantBit(n) = UInt64(8 * sizeof(n) - leading_zeros(n)) 
 RANK_MASKS = [255,65280,16711680,4278190080,1095216660480,280375465082880,71776119061217280,18374686479671623680]
 FILE_MASKS = [72340172838076673,144680345676153346,289360691352306692,578721382704613384,1157442765409226768,2314885530818453536,4629771061636907072,9259542123273814144]
+
 
 function leastSignificantBit(n)
     if(n == 0)
@@ -13,18 +17,18 @@ end
 function getBit(N, m)
     return (N >> (m - 1)) & 1
 end
+
+
 global letter_to_num = Dict('a'=>1,'b'=>2,'c'=>3,'d'=>4,'e'=>5,'f'=>6,'g'=>7,'h'=>8)
-
-
 function UCIToBB(move)
     start_index = letter_to_num[move[1]] + ((parse(Int,move[2]) - 1) * 8)
     end_index = letter_to_num[move[3]] + ((parse(Int,move[4]) - 1) * 8)
-    return start_index,end_index
+    return UInt64(start_index),UInt64(end_index)
 end
 
 
 function setBitRange(num, start_index,end_index)
-    n = num
+    n = UInt64(num)
     for i in start_index:end_index
         n = n | (1 << (i - 1))
     end
@@ -33,19 +37,16 @@ end
 
 
 function setBit(N,index,value)
-  #  n = digits(num,base=2,pad=64)
-  #  n[index] = value
-  N = UInt64(N)
-  if(value == 1)
+    N = UInt64(N)
+    if(value == 1)
     return  N | (1 << (index - 1))
-  else
+    else
     return N & ~(1 << (index - 1))
-  end
-    #  return parse(UInt64,join(reverse(n)),base=2)
+    end
 end
 
-global  m = Dict(1=>'a',2=>'b',3=>'c',4=>'d',5=>'e',6=>'f',7=>'g',8=>'h')
 
+global  m = Dict(1=>'a',2=>'b',3=>'c',4=>'d',5=>'e',6=>'f',7=>'g',8=>'h')
 function BBToUCI(start_index, end_index)
     start_file = (start_index % 8 == 0) ? 8 : start_index % 8
     end_file = (end_index % 8 == 0) ? 8 : end_index % 8 
@@ -66,7 +67,6 @@ function printBB(board)
     end
     print('\n')
 end
-
 
 
 function prettyPrintBoard(board::Dict)
@@ -123,12 +123,17 @@ function emptyPositions()
     return board
 end
 
+
 function getWhitePieces(board)
     return board["WP"] | board["WB"] | board["WN"] | board["WR"] | board["WQ"] | board["WK"]
 end
-    function getBlackPieces(board)
+
+
+function getBlackPieces(board)
     return board["BP"] | board["BB"] | board["BN"] | board["BR"] | board["BQ"] | board["BK"]
-    end
+end
+
+
 function startPositions()
     board = Dict()
     board["WP"] = setBitRange(0,9,16)
@@ -144,4 +149,25 @@ function startPositions()
     board["BQ"] = setBit(0,61,1)
     board["BK"] = setBit(0,60,1)
     return board
+end
+
+
+function randomPosition()
+    board = startPositions()
+    local count = 0
+    colour = 'W'
+    while(count < 20)
+        colour = (colour == 'W') ? 'B' : 'W'
+        moves = getMovesFast(board,colour,[])
+        move = moves[rand(1:length(moves))]
+        board = makeMoveUCI(move,board,colour)
+        count = count + 1
+    end
+    return board
+end
+
+function popBit(board,sq)
+    return board &= ~(1 << sq)
+end
+
 end
