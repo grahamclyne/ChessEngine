@@ -5,7 +5,7 @@ factor out en passant logic from pawn moves
 perft
 uci
 player input
-
+deal with case where king is uncovered via enpassant in findNoCheckMoves
 
 NOTES TO SELF
 

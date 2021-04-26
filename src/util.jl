@@ -2,8 +2,26 @@ module Util
 
 
 mostSignificantBit(n) = UInt64(8 * sizeof(n) - leading_zeros(n)) 
-RANK_MASKS = [255,65280,16711680,4278190080,1095216660480,280375465082880,71776119061217280,18374686479671623680]
-FILE_MASKS = [72340172838076673,144680345676153346,289360691352306692,578721382704613384,1157442765409226768,2314885530818453536,4629771061636907072,9259542123273814144]
+RANK_MASKS = [
+    UInt64(255),
+    UInt64(65280),
+    UInt64(16711680),
+    UInt64(4278190080),
+    UInt64(1095216660480),
+    UInt64(280375465082880),
+    UInt64(71776119061217280),
+    UInt64(18374686479671623680)
+    ]
+FILE_MASKS = [
+    UInt64(72340172838076673),
+    UInt64(144680345676153346),
+    UInt64(289360691352306692),
+    UInt64(578721382704613384),
+    UInt64(1157442765409226768),
+    UInt64(2314885530818453536),
+    UInt64(4629771061636907072),
+    UInt64(9259542123273814144)
+    ]
 
 
 function leastSignificantBit(n)
@@ -135,7 +153,7 @@ end
 
 
 function startPositions()
-    board = Dict()
+    board = Dict{String,UInt64}()
     board["WP"] = setBitRange(0,9,16)
     board["WR"] = setBit(0,1,1) | setBit(0,8,1)
     board["WN"] = setBit(0,2,1) | setBit(0,7,1)
@@ -158,7 +176,7 @@ function randomPosition()
     colour = 'W'
     while(count < 20)
         colour = (colour == 'W') ? 'B' : 'W'
-        moves = getMovesFast(board,colour,[])
+        moves = getMoves(board,colour,[])
         move = moves[rand(1:length(moves))]
         board = makeMoveUCI(move,board,colour)
         count = count + 1

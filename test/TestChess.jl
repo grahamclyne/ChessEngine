@@ -142,8 +142,11 @@ end
     board["WQ"] = Util.setBit(0,46,1)
     board["BP"] = Util.setBit(0,53,1)
     Util.prettyPrintBoard(board)
-    @test length(Moves.getMovesFast(board,'B',[])) == 5
+    @test length(Moves.getMoves(board,'B',[])) == 5
     
+
+    board = Dict("BR" => 0x8100000000000000, "WK" => 0x0000000000000008, "WB" => 0x0000000000000004, "WQ" => 0x0000000004000000, "BQ" => 0x0000000000000020, "BB" => 0x2000100000000000, "BN" => 0x4200000000000000, "BK" => 0x1000000000000000, "WR" => 0x0000000000000001, "WN" => 0x0000000000000002, "BP" => 0x00e7001000000000, "WP" => 0x00000042110c8000)
+    @test Moves.isCheckMate(board,'W',[]) == 0
 
 end
 
@@ -159,7 +162,7 @@ end
     #pawn promotion forward to queen 
     board = Util.emptyPositions()
     board["BP"] = Util.setBit(board["BP"],9,1)
-    @test "a2a1Q" in Moves.getMovesFast(board,'B',[])
+    @test "a2a1Q" in Moves.getMoves(board,'B',[])
 end
 
 @testset "en passant" verbose = true begin
@@ -170,7 +173,7 @@ end
     board["WP"] = Util.setBit(board["WP"],37,1)
     board["BP"] = Util.setBit(board["BP"],38,1)
     push!(history,"e3e5")
-    moves = Moves.getMovesFast(board,'B',history)
+    moves = Moves.getMoves(board,'B',history)
     @test "f5e4" in moves
 
     # #not en passant of black pawn
@@ -249,7 +252,7 @@ end
     board["WR"] = Util.setBit(0,16,1)
     board["BR"] = Util.setBit(0,64,1)
     board["BB"] = Util.setBit(0,9,1)
-    @test count_ones(Moves.getAttackBoardFast(board,'W',false) & Util.getBlackPieces(board)) == 2
+    @test count_ones(Moves.getAttackBoard(board,'W',false) & Util.getBlackPieces(board)) == 2
     
 
 

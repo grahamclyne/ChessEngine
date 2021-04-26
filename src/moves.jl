@@ -142,7 +142,7 @@ function knightMoves(sq)
     if(sq == 0) return 0 end
 
     attacks = 0
-    board = 2^(sq - 1)
+    board = Util.setBit(0,sq,1)
     if ((board >> 17) & ~Util.FILE_MASKS[8] > 0) attacks |= (board >> 17) end
     if ((board >> 15) & ~Util.FILE_MASKS[1] > 0) attacks |= (board >> 15) end
     if ((board >> 10) & ~Util.FILE_MASKS[8] & ~Util.FILE_MASKS[7] > 0) attacks |= (board >> 10) end
@@ -245,12 +245,12 @@ function getPieceMovesFast(board,occ,pieces,f)
     return ar
 end
 
-function getMovesFast(board,colour,history)
+function getMoves(board,colour,history)
     occ = reduce((x,y) -> x | y, values(board))
     opp_colour = (colour === 'W') ? 'B' : 'W'
     pieces =  board[colour * 'P'] | board[colour * 'N'] | board[colour * 'B'] | board[colour * 'R'] | board[colour * 'Q'] | board[colour * 'K']
     moves = append!(
-        getPieceMovesFast(board[colour * 'K'],occ,pieces,(x,y) -> kingMovesActual(y, getAttackBoardFast(board,opp_colour, true), pieces)),
+        getPieceMovesFast(board[colour * 'K'],occ,pieces,(x,y) -> kingMovesActual(y, getAttackBoard(board,opp_colour, true), pieces)),
         getPieceMovesFast(board[colour * 'Q'],occ,pieces,queenMoves),
         getPieceMovesFast(board[colour *'N'],occ,pieces,(x,y) -> knightMoves(y)),
         getPieceMovesFast(board[colour * 'B'],occ,pieces,bishopMoves),
@@ -263,72 +263,43 @@ function getMovesFast(board,colour,history)
 end
 
 
-# #outward facing call to games.jl
-# function getMovesUCI(board::Dict,colour::Char,history,is_check::Bool)::Array{String}
-#     occ = reduce((x,y) -> x | y, values(board))
-#     opp_colour = (colour === 'W') ? 'B' : 'W'
-#     pieces =  board[colour * 'P'] | board[colour * 'N'] | board[colour * 'B'] | board[colour * 'R'] | board[colour * 'Q'] | board[colour * 'K']
-#     moves = append!(
-#         getPieceMoves(board[colour * 'K'],occ,pieces,(x,y) -> kingMovesActual(y, getAttackBoardFast(board,opp_colour, true), pieces), 'K'),
-#         getPieceMoves(board[colour * 'Q'],occ,pieces,queenMoves,'Q'),
-#         getPieceMoves(board[colour *'N'],occ,pieces,(x,y) -> knightMoves(y), 'N'),
-#         getPieceMoves(board[colour * 'B'],occ,pieces,bishopMoves,'B'),
-#         getPieceMoves(board[colour * 'R'],occ,pieces,rookMoves,'R')
-#         )
-#     moves_fin = []
-#     for i in 1:length(moves)
-#         moves_fin = append!(moves_fin, generatePossibleMoves(moves[i][1], x -> moves[i][2], 'N'))
-#     end
-#     # println(moves_fin)
-#     moves_fin = append!(moves_fin, getPawnMoves(board,colour,history))
-#     # println(moves_fin)
-#     moves_fin = findNoCheckMoves(moves_fin,board,colour)
-#     moves_with_castle = append!(castleMoves(board,colour,history,occ),moves_fin)
-#     return moves_with_castle
-# end
-
-
 function findNoCheckMoves(moves,board::Dict,colour::Char)::Array{String}
     moves_no_check = []
   #  moves_no_check = Array{String}(undef,length(moves))
     for index in 1:length(moves)
         #just look for pinned pieces
         start_index,end_index = Util.UCIToBB(moves[index])
-        board_state = copy(board)
+        key1 = ""
+        key2 = ""
+        temp1 = 0
+        temp2 = 0
         for key in keys(board)
-            if(board[key] & (1 << (start_index - 1)) > 0  && ~('K' in key))
-                board_state[key] = Util.setBit(board_state[key], start_index,0)
-                board_state[key] = Util.setBit(board_state[key],end_index,1)
+            if(board[key] & (1 << (start_index - 1)) > 0)
+                temp1 = board[key]
+                key1 = key
+                board[key] = Util.setBit(board[key], start_index,0)
+                board[key] = Util.setBit(board[key],end_index,1)
             elseif(board[key] & (1 << (end_index - 1)) > 0 && ~('K' in key))
-                board_state[key] = Util.setBit(board_state[key], end_index,0)
+                temp2 = board[key]
+                key2 = key
+                board[key] = Util.setBit(board[key], end_index,0)
             end
         end
-        if(~isCheck(board_state,colour))
+        if(~isCheck(board,colour))
             push!(moves_no_check,moves[index])
+        end
+        #undo moves
+        if(key1 !== "")
+        board[key1] = temp1
+        end
+        if(key2 !== "")
+        board[key2] = temp2
         end
     end
     return moves_no_check
 end
 
-
-# function getAttackBoard(board,colour,for_king)
-#     occ = reduce((x,y) -> x | y,values(board))
-#     opp_colour = (colour === 'W') ? 'B' : 'W'
-#     occ = (for_king) ? occ &= ~(board[opp_colour * 'K']) : occ
-#     pieces =  board[colour * 'P'] | board[colour * 'N'] | board[colour * 'B'] | board[colour * 'R'] | board[colour * 'Q'] | board[colour * 'K']
-#     moves = append!(
-#         getPieceMoves(board[colour * 'K'],occ,pieces,(x,y) -> kingMoves(y), 'K'),
-#         getPieceMoves(board[colour * 'Q'],occ,pieces,queenMoves,'Q'),
-#         getPieceMoves(board[colour *'N'],occ,pieces,(x,y) -> knightMoves(y), 'N'),
-#         getPieceMoves(board[colour * 'B'],occ,pieces,bishopMoves,'B'),
-#         getPieceMoves(board[colour * 'R'],occ,pieces,rookMoves,'R'),
-#         pawnAttacks(board[colour * 'P'],colour)
-#         )
-#     moves = map(x -> x[1], moves)
-#     return reduce((x,y) -> x|y, moves)
-# end
-
-function getAttackBoardFast(board,colour,for_king)
+function getAttackBoard(board,colour,for_king)
     occ = reduce((x,y) -> x | y,values(board))
     opp_colour = (colour === 'W') ? 'B' : 'W'
 
@@ -397,7 +368,7 @@ function castleMoves(board,colour,history,occ)
     end
 
     #kingside
-    if(Util.getBit(occ,king_pos) > 0  && Util.getBit(occ,rook_pos) > 0 && ~piece_moved && (occ & to_move) == 0 && (getAttackBoardFast(board,opp_colour,false) & to_move) == 0)
+    if(Util.getBit(occ,king_pos) > 0  && Util.getBit(occ,rook_pos) > 0 && ~piece_moved && (occ & to_move) == 0 && (getAttackBoard(board,opp_colour,false) & to_move) == 0)
          #if both king and rook exist, no pieces between, no challenged squares, no piece has moved
          (colour === 'W') ? push!(moves,"e1g1") : push!(moves,"e8g8")
     end
@@ -405,7 +376,7 @@ function castleMoves(board,colour,history,occ)
     #queenside
     rook_pos = (colour === 'W') ? 1 : 57
     to_move = (colour === 'W') ? Util.setBitRange(0,2,4) : Util.setBitRange(0,58,60)
-    if(Util.getBit(occ,king_pos) > 0 && Util.getBit(occ,rook_pos) > 0 && ~piece_moved && (occ & to_move) == 0 && (getAttackBoardFast(board,opp_colour,false) & to_move) == 0)
+    if(Util.getBit(occ,king_pos) > 0 && Util.getBit(occ,rook_pos) > 0 && ~piece_moved && (occ & to_move) == 0 && (getAttackBoard(board,opp_colour,false) & to_move) == 0)
         colour === 'W' ? push!(moves,"e1c1") : push!(moves,"e8c8")
     end
     return moves
@@ -417,7 +388,7 @@ end
 
 function isCheck(board,colour)
     opp_colour = (colour === 'W') ? 'B' : 'W'
-    attack = getAttackBoardFast(board,opp_colour,true)
+    attack = getAttackBoard(board,opp_colour,true)
     return ((board[colour * 'K'] & attack) > 0) ? true : false
 end
 
@@ -425,7 +396,7 @@ end
 
 function isCheckMate(board,colour,history)
     check = isCheck(board,colour)
-    legal_moves = getMovesFast(board,colour,history)
+    legal_moves = getMoves(board,colour,history)
     while(check && (length(legal_moves) > 0))
         move = legal_moves[1]
         board_state = makeMoveUCI(move,board,colour)
@@ -435,7 +406,7 @@ function isCheckMate(board,colour,history)
             popfirst!(legal_moves)
         end
     end
-    if(length(legal_moves) == 0 && check)
+    if (length(legal_moves) == 0 && check)
         return 1
     elseif (length(legal_moves) == 0 && ~check) #stalemate
         return 2

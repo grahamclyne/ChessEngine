@@ -4,10 +4,8 @@ import Util
 import Moves
 import Search
 
-function pickMoveUCI(board,colour,history,is_check)
-    
-    w = Search.negamax(-Inf,Inf,2,colour,history,board,0)
-    println("weight of move: ", w, ' ', Search.best_move)
+function pickMoveUCI(board,colour,history)
+    Search.search(3,colour,history,board)
     return Search.best_move
 end
 
@@ -16,16 +14,15 @@ function play(board,colour,history)
     states = []
     while(true)
         opp_colour = (colour === 'W') ? 'B' : 'W'
-        is_check = Moves.isCheck(board,colour)
-        board,states = @time takeTurn(board,history,colour,states,is_check)
+        board,states = @time takeTurn(board,history,colour,states)
         colour = opp_colour
         if(checkEndGame(board,states,history,colour)) break end
     end
 
 end
 
-function takeTurn(board,history,colour,states,is_check)
-    move = pickMoveUCI(board,colour,history,is_check)
+function takeTurn(board,history,colour,states)
+    move = pickMoveUCI(board,colour,history)
     push!(history,move)
     println("move picked: ", move)
     board = Moves.makeMoveUCI(move,board,colour)

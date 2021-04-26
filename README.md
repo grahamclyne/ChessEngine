@@ -46,14 +46,12 @@ pkg dist\uci.js
 
 
 
+
 d everything under the L20 label. The actual indexing is just the movq and movsd instructions. So if you care about really fast code then you will get much more of a performance penalty from the bound checking than the 1-based indexing. Fortunately Julia offers ways to alleviate this problems through the use of @inbound and --check-bounds=no.
 
-
-julia packages so far 
-Test
-Profile
-ProfileView
 
 THE sq variable, and whenever looking to access a square from the board is not zero indexed, 64 is possible, 0 is not etc
 
 need to add current path to C:\Users\Graham Clyne\.julia\config\startup.jl and push it to LOAD_PATH for modules to work
+
+using Revise in REPL so do not have to restart module to reuse pprof when changing a function does not work --- so slow
